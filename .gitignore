@@ -1,0 +1,11 @@
+# ignore
+**/#*
+**/.*
+**/_*
+node_modules/
+data/
+logs/
+
+# keep
+!.git
+!.gitignore

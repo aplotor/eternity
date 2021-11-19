@@ -1,0 +1,590 @@
+const project_root = process.cwd();
+const run_config = (project_root.toLowerCase().slice(0, 20) == "/mnt/c/users/j9108c/" ? "dev" : "prod");
+
+const secrets = (run_config == "dev" ? (await import(`${project_root}/_secrets.mjs`)).dev : (await import(`${project_root}/_secrets.mjs`)).prod);
+const logger = (await import(`${project_root}/model/logger.mjs`));
+const sql = await import(`${project_root}/model/sql.mjs`);
+const firebase = await import(`${project_root}/model/firebase.mjs`);
+const cryptr = (await import(`${project_root}/model/cryptr.mjs`));
+const email = (await import(`${project_root}/model/email.mjs`));
+const epoch = await import(`${project_root}/model/epoch.mjs`);
+
+const snoowrap = (await import("snoowrap")).default;
+
+const usernames_to_socket_ids = {};
+const socket_ids_to_usernames = {};
+
+class User {
+	constructor(username, refresh_token, dummy=false) {
+		this.username = username;
+
+		if (dummy) {
+			null;
+		} else {
+			this.reddit_api_refresh_token_encrypted = cryptr.encrypt(refresh_token);
+			this.category_update_info = {
+				saved: {
+					latest_fn_mixed: null,
+					latest_new_data_epoch: null
+				},
+				created: {
+					latest_fn_posts: null,
+					latest_fn_comments: null,
+					latest_new_data_epoch: null
+				},
+				upvoted: {
+					latest_fn_posts: null,
+					latest_new_data_epoch: null
+				},
+				downvoted: {
+					latest_fn_posts: null,
+					latest_new_data_epoch: null
+				},
+				hidden: {
+					latest_fn_posts: null,
+					latest_new_data_epoch: null
+				},
+				awarded: {
+					latest_fn_mixed: null,
+					latest_new_data_epoch: null
+				}
+			};
+			this.last_updated_epoch = null;
+			this.last_active_epoch = epoch.now();
+			this.email_encrypted = null;
+			this.email_notif = {
+				last_inactive_notif_epoch: null,
+				last_update_failed_notif_epoch: null
+			};
+			this.firebase_service_acc_key_encrypted = null;
+			this.firebase_web_app_config_encrypted = null;
+		}
+	}
+	async save() {
+		let user_for_comparison = null;
+		try {
+			user_for_comparison = await get(this.username);
+		} catch (err) {
+			if (err != `Error: user (${this.username}) dne`) {
+				console.error(err);
+				logger.error(err);
+				return;
+			}
+		}
+		
+		if (!user_for_comparison || !user_for_comparison.last_updated_epoch) {
+			console.log(`new user (${this.username})`);
+
+			await sql.query(`
+				insert into user_ 
+				values (
+					'${this.username}', 
+					'${this.reddit_api_refresh_token_encrypted}', 
+					'${JSON.stringify(this.category_update_info)}', 
+					null, 
+					${this.last_active_epoch}, 
+					null, 
+					'${JSON.stringify(this.email_notif)}', 
+					null, 
+					null
+				) 
+				on conflict (username) do update -- previously purged user
+				set 
+					reddit_api_refresh_token_encrypted = '${this.reddit_api_refresh_token_encrypted}', 
+					category_update_info = '${JSON.stringify(this.category_update_info)}', 
+					last_updated_epoch = null, 
+					last_active_epoch = ${this.last_active_epoch}, 
+					email_encrypted = null, 
+					email_notif = '${JSON.stringify(this.email_notif)}', 
+					firebase_service_acc_key_encrypted = null, 
+					firebase_web_app_config_encrypted = null;
+			`);
+		} else {
+			console.log(`returning user (${this.username})`);
+
+			await sql.query(`
+				update user_ 
+				set reddit_api_refresh_token_encrypted = '${this.reddit_api_refresh_token_encrypted}' 
+				where username = '${this.username}';
+			`);
+		}
+
+		console.log(`saved user (${this.username})`);
+	}
+	async update(io=null, socket_id=null) {
+		console.log(`updating user (${this.username})`);
+
+		let progress = (io ? 0 : null);
+		const complete = (io ? 8 : null);
+
+		this.requester = new snoowrap({
+			userAgent: secrets.reddit_app_user_agent,
+			clientId: secrets.reddit_app_id,
+			clientSecret: secrets.reddit_app_secret,
+			refreshToken: cryptr.decrypt(this.reddit_api_refresh_token_encrypted)
+		});
+		this.me = await this.requester.getMe();
+
+		this.new_data = {
+			saved: {
+				items: {},
+				item_sub_icon_urls: {}
+			},
+			created: {
+				items: {},
+				item_sub_icon_urls: {}
+			},
+			upvoted: {
+				items: {},
+				item_sub_icon_urls: {}
+			},
+			downvoted: {
+				items: {},
+				item_sub_icon_urls: {}
+			},
+			hidden: {
+				items: {},
+				item_sub_icon_urls: {}
+			},
+			awarded: {
+				items: {},
+				item_sub_icon_urls: {}
+			}
+		};
+
+		this.currently_requesting_icon_sets = {
+			saved: new Set(),
+			created: new Set(),
+			upvoted: new Set(),
+			downvoted: new Set(),
+			hidden: new Set(),
+			awarded: new Set()
+		};
+
+		const s_promise = new Promise(async (resolve, reject) => {
+			await this.update_category("saved", "mixed");
+			await this.get_new_item_icon_urls("saved");
+			(io ? io.to(socket_id).emit("update progress", ++progress, complete) : null);
+			resolve();
+		});
+
+		const c_promise = new Promise(async (resolve, reject) => {
+			await Promise.all([
+				this.update_category("created", "posts"),
+				this.update_category("created", "comments")
+			]);
+			await this.get_new_item_icon_urls("created");
+			(io ? io.to(socket_id).emit("update progress", ++progress, complete) : null);
+			resolve();
+		});
+		
+		const u_promise = new Promise(async (resolve, reject) => {
+			await this.update_category("upvoted", "posts");
+			await this.get_new_item_icon_urls("upvoted");
+			(io ? io.to(socket_id).emit("update progress", ++progress, complete) : null);
+			resolve();
+		});
+		
+		const d_promise = new Promise(async (resolve, reject) => {
+			await this.update_category("downvoted", "posts");
+			await this.get_new_item_icon_urls("downvoted");
+			(io ? io.to(socket_id).emit("update progress", ++progress, complete) : null);
+			resolve();
+		});
+
+		const h_promise = new Promise(async (resolve, reject) => {
+			await this.update_category("hidden", "posts");
+			await this.get_new_item_icon_urls("hidden");
+			(io ? io.to(socket_id).emit("update progress", ++progress, complete) : null);
+			resolve();
+		});
+
+		const a_promise = new Promise(async (resolve, reject) => {
+			await this.update_category("awarded", "mixed");
+			await this.get_new_item_icon_urls("awarded");
+			(io ? io.to(socket_id).emit("update progress", ++progress, complete) : null);
+			resolve();
+		});
+
+		await Promise.all([s_promise, c_promise, u_promise, d_promise, h_promise, a_promise]);
+
+		try {
+			const app = firebase.create_app(JSON.parse(cryptr.decrypt(this.firebase_service_acc_key_encrypted)), JSON.parse(cryptr.decrypt(this.firebase_web_app_config_encrypted)).databaseURL, this.username);
+			const db = firebase.get_db(app);
+			await firebase.insert_data(db, this.new_data);
+			firebase.free_app(app).catch((err) => console.error(err));
+			(io ? io.to(socket_id).emit("update progress", ++progress, complete) : null);
+		} catch (err) {
+			console.error(err);
+			logger.error(`user (${this.username}) db update error (${err})`);
+
+			if (epoch.now() - this.email_notif.last_update_failed_notif_epoch >= 2592000) { // 30d
+				email.send(this, "database update error notice", `your database could not be updated because: ${err}. please resolve this asap`);
+				this.email_notif.last_update_failed_notif_epoch = epoch.now();
+				sql.query(`
+					update user_ 
+					set email_notif = '${JSON.stringify(this.email_notif)}' 
+					where username = '${this.username}';
+				`).catch((err) => console.error(err));
+			}
+			
+			return;
+		}
+
+		await sql.query(`
+			update user_ 
+			set 
+				category_update_info = '${JSON.stringify(this.category_update_info)}', 
+				last_updated_epoch = ${this.last_updated_epoch = epoch.now()} 
+			where username = '${this.username}';
+		`);
+		(io ? io.to(socket_id).emit("update progress", ++progress, complete) : null);
+		console.log(`updated user (${this.username})`);
+
+		delete this.new_data;
+		delete this.currently_requesting_icon_sets;
+	}
+	async update_category(category, type) {
+		let listing = null;
+		const options = {
+			limit: 5,
+			before: this.category_update_info[category][`latest_fn_${type}`] // "before" is actually chronologically after. https://www.reddit.com/dev/api/#listings
+		}
+
+		if (category == "saved") {
+			listing = await this.me.getSavedContent(options);
+		} else if (category == "created") {
+			if (type == "posts") {
+				listing = await this.me.getSubmissions(options);
+			} else if (type == "comments") {
+				listing = await this.me.getComments(options);
+			}
+		} else if (category == "upvoted") {
+			listing = await this.me.getUpvotedContent(options);
+		} else if (category == "downvoted") {
+			listing = await this.me.getDownvotedContent(options);
+		} else if (category == "hidden") {
+			listing = await this.me.getHiddenContent(options);
+		} else if (category == "awarded") {
+			listing = await this.me._getListing({
+				uri: `u/${this.username}/gilded/given`,
+				qs: options
+			});
+		}
+
+		if (listing.isFinished) {
+			console.log(`(${category}) (${type}) listing is finished: ${listing.isFinished}`);
+			
+			if (listing.length != 0) {
+				this.parse_listing(listing, category, type);
+				this.category_update_info[category].latest_new_data_epoch = epoch.now();
+			}
+		} else {
+			const extended_listing = await listing.fetchAll({
+				append: true
+			});
+			console.log(`(${category}) (${type}) extended listing is finished: ${extended_listing.isFinished}`);
+
+			this.parse_listing(extended_listing, category, type);
+			this.category_update_info[category].latest_new_data_epoch = epoch.now();
+		}
+	}
+	parse_listing(listing, category, type, from_mixed=false) {
+		if (type == "mixed") {
+			this.category_update_info[category].latest_fn_mixed = listing[0].name;
+
+			const posts = [];
+			const comments = [];
+
+			for (const item of listing) {
+				if (item.constructor.name == "Submission") {
+					posts.push(item);
+				} else if (item.constructor.name == "Comment") {
+					comments.push(item);
+				}
+			}
+	
+			this.parse_listing(posts, category, "posts", true);
+			this.parse_listing(comments, category, "comments", true);
+		} else {
+			(!from_mixed ? this.category_update_info[category][`latest_fn_${type}`] = listing[0].name : null);
+
+			for (const item of listing) {
+				this.new_data[category].items[item.id] = {
+					type: (type == "posts" ? "post" : "comment"),
+					content: (type == "posts" ? item.title : item.body),
+					author: "u/"+item.author.name,
+					sub: item.subreddit_name_prefixed,
+					url: (item.permalink.endsWith("/") ? "https://www.reddit.com"+item.permalink.slice(0, -1) : "https://www.reddit.com"+item.permalink),
+					created_epoch: item.created_utc
+				};
+
+				(!this.new_data[category].item_sub_icon_urls[item.subreddit_name_prefixed] ? this.currently_requesting_icon_sets[category].add(item.subreddit_name_prefixed) : null);
+			}
+		}
+	}
+	async get_new_item_icon_urls(category) {
+		let r_subs = []; // actual subs
+		let u_subs = []; // users as subs
+
+		for (const sub of this.currently_requesting_icon_sets[category]) {
+			if (sub.startsWith("r/")) {
+				r_subs.push(sub);
+			} else if (sub.startsWith("u/")) {
+				u_subs.push(sub);
+			}
+		}
+
+		(r_subs.length != 0 ? await this.request_item_icon_urls("r/", r_subs, category) : null);
+		(u_subs.length != 0 ? await this.request_item_icon_urls("u/", u_subs, category) : null);
+	}
+	async request_item_icon_urls(type, subs, category) {
+		const promises = [];
+
+		let required_num_requests = null;
+		const ratelimit_remaining = this.requester.ratelimitRemaining;
+		let i = 0;
+		
+		if (type == "r/") {
+			required_num_requests = Math.ceil(subs.length / 100);
+			
+			for (; i < required_num_requests && i < ratelimit_remaining; i++) {
+				promises.push(this.requester.oauthRequest({
+					uri: "api/info", // only takes max of 100 subs at once
+					qs: {
+						sr_name: subs.slice(i*100, i*100+100).join(",")
+					}
+				}));
+			}
+		} else if (type == "u/") {
+			required_num_requests = subs.length;
+
+			for (; i < required_num_requests && i < ratelimit_remaining; i++) {
+				promises.push(this.requester.oauthRequest({
+					uri: `${subs[i]}/about`
+				}));
+			}
+		}
+		(i == ratelimit_remaining ? console.log(`user (${this.username}) ratelimit reached`) : null);
+
+		const responses = await Promise.all(promises);
+
+		if (type == "r/") {
+			for (const listing of responses) {
+				for (const sub of listing) {
+					const sub_name = sub.display_name_prefixed;
+					
+					let sub_icon_url = "#";
+					if (sub.icon_img) {
+						sub_icon_url = sub.icon_img.split("?")[0];
+					} else if (sub.community_icon) {
+						sub_icon_url = sub.community_icon.split("?")[0];
+					}
+	
+					this.new_data[category].item_sub_icon_urls[sub_name] = sub_icon_url;
+				}
+			}
+		} else if (type == "u/") {
+			for (const sub of responses) {
+				const sub_name = "u/"+sub.name;
+
+				let sub_icon_url = "#";
+				if (sub.icon_img) {
+					sub_icon_url = sub.icon_img.split("?")[0];
+				} else if (sub.subreddit.display_name.icon_img) {
+					sub_icon_url = sub.subreddit.display_name.icon_img.split("?")[0];
+				} else if (sub.community_icon) {
+					sub_icon_url = sub.community_icon.split("?")[0];
+				} else if (sub.subreddit.display_name.community_icon) {
+					sub_icon_url = sub.subreddit.display_name.community_icon.split("?")[0];
+				} else if (sub.snoovatar_img) {
+					sub_icon_url = sub.snoovatar_img.split("?")[0];
+				} else if (sub.subreddit.display_name.snoovatar_img) {
+					sub_icon_url = sub.subreddit.display_name.snoovatar_img.split("?")[0];
+				}
+
+				this.new_data[category].item_sub_icon_urls[sub_name] = sub_icon_url;
+			}
+		}
+	}
+	async purge() {
+		await sql.query(`
+			update user_ 
+			set 
+				reddit_api_refresh_token_encrypted = null, 
+				category_update_info = null, 
+				last_updated_epoch = null, 
+				last_active_epoch = null, 
+				email_encrypted = null, 
+				email_notif = null, 
+				firebase_service_acc_key_encrypted = null, 
+				firebase_web_app_config_encrypted = null 
+			where username = '${this.username}';
+		`);
+		delete usernames_to_socket_ids[this.username];
+		console.log(`purged user (${this.username})`);
+	}
+}
+
+async function fill_usernames_to_socket_ids() {
+	const existing_users = await sql.query(`
+		select * from user_ 
+		where reddit_api_refresh_token_encrypted is not null;
+	`);
+	for (const user of existing_users) {
+		usernames_to_socket_ids[user.username] = null;
+	}
+}
+
+async function get(username) {
+	console.log(`getting user (${username})`);
+
+	const rows = await sql.query(`
+		select * from user_ 
+		where username = '${username}';
+	`);
+	
+	if (rows[0] == undefined) {
+		throw new Error(`user (${username}) dne`);
+	} else {
+		const plain_object = rows[0];
+		// console.log(plain_object);
+		(plain_object.last_updated_epoch ? plain_object.last_updated_epoch = parseInt(plain_object.last_updated_epoch) : null);
+		plain_object.last_active_epoch = parseInt(plain_object.last_active_epoch);
+	
+		const user = Object.assign(new User(null, null, true), plain_object);
+		return user;
+	}
+}
+
+async function delete_item_from_reddit_acc(username, item_id, item_category, item_type) {
+	const user = await get(username);
+
+	const requester = new snoowrap({
+		userAgent: secrets.reddit_app_user_agent,
+		clientId: secrets.reddit_app_id,
+		clientSecret: secrets.reddit_app_secret,
+		refreshToken: cryptr.decrypt(user.reddit_api_refresh_token_encrypted)
+	});
+
+	let item = null;
+	if (item_type == "post") {
+		item = requester.getSubmission(item_id);
+	} else if (item_type == "comment") {
+		item = requester.getComment(item_id);
+	}
+	
+	switch (item_category) {
+		case "saved":
+			await item.unsave();
+			break;
+		case "created":
+			await item.delete();
+			break;
+		case "upvoted":
+		case "downvoted":
+			await item.unvote();
+			break;
+		case "hidden":
+			await item.unhide();
+			break;
+		default:
+			break;
+	}
+}
+
+let update_all_completed = null;
+async function update_all(io) { // synchronous one-by-one user update till all users are updated
+	update_all_completed = false;
+
+	const all_usernames = Object.keys(usernames_to_socket_ids);
+
+	const async_iterable_obj = {
+		[Symbol.asyncIterator]() {
+			return {
+				i: 0,
+				next() {
+					if (this.i < all_usernames.length) {
+						return new Promise(async (resolve, reject) => {
+							try {
+								const user = await get(all_usernames[this.i]);
+
+								if (epoch.now() - user.last_active_epoch <= 15552000) { // 6mo
+									if (user.last_updated_epoch && epoch.now() - user.last_updated_epoch >= 30) {
+										const pre_update_lndes = Object.entries(user.category_update_info).map((entry) => entry[1].latest_new_data_epoch);
+	
+										await user.update();
+										
+										const post_update_lndes = Object.entries(user.category_update_info).map((entry) => entry[1].latest_new_data_epoch);
+	
+										if (usernames_to_socket_ids[user.username]) {
+											for (let i = 0; i < 6; i++) { // 6 categories
+												if (post_update_lndes[i] > pre_update_lndes[i]) {
+													const app = firebase.create_app(JSON.parse(cryptr.decrypt(user.firebase_service_acc_key_encrypted)), JSON.parse(cryptr.decrypt(user.firebase_web_app_config_encrypted)).databaseURL, user.username);
+													const auth_token = await firebase.create_new_auth_token(app);
+													firebase.free_app(app).catch((err) => console.error(err));
+	
+													io.to(usernames_to_socket_ids[user.username]).emit("store data", false, JSON.parse(cryptr.decrypt(user.firebase_web_app_config_encrypted)), auth_token);
+													break;
+												}
+											}
+	
+											io.to(usernames_to_socket_ids[user.username]).emit("store last updated epoch", user.last_updated_epoch);
+										}
+									}	
+								} else {
+									if (!user.email_notif.last_inactive_notif_epoch) {
+										email.send(user, "account inactivity notice", "you have not used eternity for more than 6 months. as such, your eternity account has been marked inactive and new Reddit data will not continue to sync to your database. to resolve this, log in to eternity");
+										user.email_notif.last_inactive_notif_epoch = epoch.now();
+										sql.query(`
+											update user_ 
+											set email_notif = '${JSON.stringify(user.email_notif)}' 
+											where username = '${user.username}';
+										`).catch((err) => console.error(err));
+									}
+								}
+							} catch (err) {
+								if (err != `Error: user (${all_usernames[this.i]}) dne`) {
+									console.error(err);
+									logger.error(err);
+								}
+							} finally {
+								resolve({
+									value: this.i++,
+									done: false
+								});
+							}
+						});
+					} else {
+						update_all_completed = true;
+	
+						return Promise.resolve({
+							done: true
+						});
+					}
+				}
+			};
+		}
+	};
+	for await (const val of async_iterable_obj) {
+		// console.log(val);
+		null;
+	}
+
+	console.log("update all completed");
+}
+function cycle_update_all(io) {
+	update_all(io).catch((err) => console.error(err));
+
+	setInterval(() => (update_all_completed ? update_all(io).catch((err) => console.error(err)) : null), 60000); // 1min
+}
+
+export {
+	User,
+	usernames_to_socket_ids,
+	socket_ids_to_usernames,
+	fill_usernames_to_socket_ids,
+	get,
+	delete_item_from_reddit_acc,
+	cycle_update_all
+};
