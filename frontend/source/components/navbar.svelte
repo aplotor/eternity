@@ -1,5 +1,6 @@
 <script context="module">
 	import * as globals from "frontend/source/globals.js";
+	import * as utils from "frontend/source/utils.js";
 
 	import * as svelte from "svelte";
 
@@ -53,13 +54,13 @@
 
 		purge_confirm_btn.addEventListener("click", (evt) => {
 			evt.preventDefault();
-			(purge_input.value == `purge u/${username}` ? purge() : shake_element(purge_input));
+			(purge_input.value == `purge u/${username}` ? purge() : utils.shake_element(purge_input));
 		});
 
 		purge_input.addEventListener("keydown", (evt) => {
 			if (evt.key == "Enter") {
 				evt.preventDefault();
-				(purge_input.value == `purge u/${username}` ? purge() : shake_element(purge_input));
+				(purge_input.value == `purge u/${username}` ? purge() : utils.shake_element(purge_input));
 			}
 		});
 
@@ -77,8 +78,7 @@
 			});
 			const url = URL.createObjectURL(blob);
 			dl.href = url;
-			const now_epoch = Math.floor(Date.now() / 1000);
-			const filename = `eternity — u=${username} — ${epoch_to_formatted_datetime(now_epoch).replaceAll(":", "꞉")}.json`;
+			const filename = `eternity — u=${username} — ${utils.epoch_to_formatted_datetime(utils.now_epoch()).replaceAll(":", "꞉")}.json`;
 			dl.download = filename;
 			dl.click();
 			URL.revokeObjectURL(url);
@@ -148,13 +148,6 @@
 		} catch (err) {
 			console.error(err);
 		}
-	}
-
-	function shake_element(element) {
-		element.classList.add("shake");
-		setTimeout(() => {
-			element.classList.remove("shake");
-		}, 300);
 	}
 </script>
 

@@ -185,7 +185,7 @@ app.get("/callback", (req, res, next) => {
 
 app.post("/upload", (req, res) => {
 	if (req.isAuthenticated() && req.query.username == req.user.username) {
-		req.files.file.mv(`${backend}/data/${req.user.username}_firebase_service_acc_key.json`, (err) => (err ? console.error(err) : null));
+		req.files.file.mv(`${backend}/tempfiles/${req.user.username}_firebase_service_acc_key.json`, (err) => (err ? console.error(err) : null));
 		res.end();
 	} else {
 		res.status(401).sendFile(`${frontend}/build/index.html`);
@@ -288,7 +288,7 @@ io.on("connect", (socket) => {
 	});
 
 	socket.on("validate firebase info", async (web_app_config) => {
-		const key_path = `${backend}/data/${username}_firebase_service_acc_key.json`;
+		const key_path = `${backend}/tempfiles/${username}_firebase_service_acc_key.json`;
 		const key_string = await filesystem.promises.readFile(key_path, "utf-8");
 		const key_obj = JSON.parse(key_string);
 

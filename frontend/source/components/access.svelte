@@ -1,5 +1,6 @@
 <script context="module">
 	import * as globals from "frontend/source/globals.js";
+	import * as utils from "frontend/source/utils.js";
 	import Navbar from "frontend/source/components/navbar.svelte";
 
 	import * as svelte from "svelte";
@@ -76,7 +77,7 @@
 					store_data(data, data_pending_refresh);
 		
 					(new_data_alert_wrapper.classList.contains("d-none") ? new_data_alert_wrapper.classList.remove("d-none") : null);
-					show_alert(new_data_alert_wrapper, '<span class="ml-1">new data available!</span><button id="refresh_btn" class="btn btn-sm btn-primary ml-2">refresh</button>', "primary");
+					utils.show_alert(new_data_alert_wrapper, '<span class="ml-1">new data available!</span><button id="refresh_btn" class="btn btn-sm btn-primary ml-2">refresh</button>', "primary");
 				}
 			} catch (err) {
 				console.error(err);
@@ -88,7 +89,7 @@
 		});
 		
 		setInterval(() => {
-			(last_updated_epoch ? last_updated_wrapper.innerHTML = time_since(last_updated_epoch) : null);
+			(last_updated_epoch ? last_updated_wrapper.innerHTML = utils.time_since(last_updated_epoch) : null);
 		}, 1000);
 
 		jQuery(subreddit_select).selectpicker();
@@ -183,7 +184,7 @@
 			}
 			if (!delete_from) {
 				for (const btn of [...all_row_1_popover_btns]) {
-					shake_element(btn);
+					utils.shake_element(btn);
 				}
 				return;
 			} else {
@@ -402,7 +403,7 @@
 
 			item_list.insertAdjacentHTML("beforeend", `
 				<div id="${item_id}" class="list-group-item list-group-item-action text-left text-light p-1" data-url="${item.url}" data-type="${item.type}">
-					<a href="https://www.reddit.com/${item.sub}" target="_blank"><img src="${data_in_use[active_category].item_sub_icon_urls[item.sub]}" class="rounded-circle${(data_in_use[active_category].item_sub_icon_urls[item.sub] == "#" ? "" : " border border-light")}"/></a><small><a href="https://www.reddit.com/${item.sub}" target="_blank"><b class="ml-2">${item.sub}</b></a> &bull; <a href="https://www.reddit.com/${item.author}" target="_blank">${item.author}</a> &bull; <i data-url="${item.url}" data-toggle="tooltip" data-placement="top" title="${epoch_to_formatted_datetime(item.created_epoch)}">${time_since(item.created_epoch)}</i></small>
+					<a href="https://www.reddit.com/${item.sub}" target="_blank"><img src="${data_in_use[active_category].item_sub_icon_urls[item.sub]}" class="rounded-circle${(data_in_use[active_category].item_sub_icon_urls[item.sub] == "#" ? "" : " border border-light")}"/></a><small><a href="https://www.reddit.com/${item.sub}" target="_blank"><b class="ml-2">${item.sub}</b></a> &bull; <a href="https://www.reddit.com/${item.author}" target="_blank">${item.author}</a> &bull; <i data-url="${item.url}" data-toggle="tooltip" data-placement="top" title="${utils.epoch_to_formatted_datetime(item.created_epoch)}">${utils.time_since(item.created_epoch)}</i></small>
 					<p class="content_wrapper lead line_height_1 noto_sans m-0" data-url="${item.url}">${(item.type == "post" ? "<b>" : "<small>")}${item.content}${(item.type == "post" ? "</b>" : "</small>")}</p>
 					<button type="button" class="delete_btn btn btn-sm btn-outline-secondary shadow-none border-0 py-0" data-toggle="popover" data-placement="right" data-title="delete item from" data-content='<div class="${item_id}"><div><span class="row_1_popover_btn btn btn-sm btn-primary float-left p-1">eternity</span><span class="row_1_popover_btn btn btn-sm btn-primary float-center p-1">Reddit</span><span class="row_1_popover_btn btn btn-sm btn-primary float-right p-1">both</span></div><div><span class="row_2_popover_btn btn btn-sm btn-secondary float-left mt-2">cancel</span><span class="row_2_popover_btn delete_item_confirm_btn btn btn-sm btn-danger float-right mt-2">confirm</span></div><div class="clearfix"></div></div>' data-html="true">delete</button> <button type="button" class="copy_link_btn btn btn-sm btn-outline-secondary shadow-none border-0 py-0">copy link</button>
 				</div>
@@ -486,45 +487,6 @@
 		item_list.classList.remove("d-none");
 		item_list.scrollTop = 0;
 		items_currently_listed = 0;
-	}
-
-	function time_since(epoch) {
-		const now_epoch = Math.floor(Date.now() / 1000);
-		const epoch_diff = now_epoch - epoch;
-
-		if (epoch_diff/31536000 >= 1) {
-			return Math.floor(epoch_diff/31536000)+"y";
-		} else if (epoch_diff/2592000 >= 1) {
-			return Math.floor(epoch_diff/2592000)+"m";
-		} else if (epoch_diff/86400 >= 1) {
-			return Math.floor(epoch_diff/86400)+"d";
-		} else if (epoch_diff/3600 >= 1) {
-			return Math.floor(epoch_diff/3600)+"h";
-		} else if (epoch_diff/60 >= 1) {
-			return Math.floor(epoch_diff/60)+"m";
-		} else {
-			return epoch_diff+"s";
-		}
-	}
-
-	function epoch_to_formatted_datetime(epoch) {
-		const formatted_datetime = new Date(epoch * 1000).toLocaleString("en-GB", {timeZone: "UTC", timeZoneName: "short", hour12: true}).toUpperCase().split("/").join("-").replace(",", "").replace(" AM", ":AM").replace(" PM", ":PM");
-		return formatted_datetime;
-	}
-
-	function shake_element(element) {
-		element.classList.add("shake");
-		setTimeout(() => {
-			element.classList.remove("shake");
-		}, 300);
-	}
-
-	function show_alert(alert_wrapper, message, type) {
-		alert_wrapper.innerHTML = `
-			<div id="alert" class="alert alert-${type} fade show text-center mb-0 p-1" role="alert">
-				<span>${message}</span>
-			</div>
-		`;
 	}
 </script>
 

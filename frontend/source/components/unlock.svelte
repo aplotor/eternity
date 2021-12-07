@@ -1,5 +1,6 @@
 <script context="module">
 	import * as globals from "frontend/source/globals.js";
+	import * as utils from "frontend/source/utils.js";
 	import Navbar from "frontend/source/components/navbar.svelte";
 
 	import * as svelte from "svelte";
@@ -29,9 +30,9 @@
 
 		globals_r.socket.on("alert", (alert, msg, type) => {
 			if (alert == "validate") {
-				show_alert(validate_alert_wrapper, msg, type);
+				utils.show_alert(validate_alert_wrapper, msg, type);
 			} else if (alert == "submit") {
-				show_alert(submit_alert_wrapper, msg, type);
+				utils.show_alert(submit_alert_wrapper, msg, type);
 			}
 		});
 
@@ -58,7 +59,7 @@
 
 		validate_btn.addEventListener("click", (evt) => {
 			if (!config_input.value) {
-				show_alert(validate_alert_wrapper, "provide the web app config", "warning");
+				utils.show_alert(validate_alert_wrapper, "provide the web app config", "warning");
 				return;
 			}
 
@@ -67,12 +68,12 @@
 				web_app_config = JSON.parse(config_input.value.replace(/(\s)/g, "").replace(";", "").replace("{", '{"').replaceAll(':"', '":"').replaceAll('",', '","'));
 			} catch (err) {
 				console.error(err);
-				show_alert(validate_alert_wrapper, "this is not a Firebase web app config", "danger");
+				utils.show_alert(validate_alert_wrapper, "this is not a Firebase web app config", "danger");
 				return;
 			}
 
 			if (!file_input.value) {
-				show_alert(validate_alert_wrapper, "provide the service account key file", "warning");
+				utils.show_alert(validate_alert_wrapper, "provide the service account key file", "warning");
 				return;
 			}
 
@@ -82,7 +83,7 @@
 			const filesize_limit = 3072; // 3kb in binary bytes. firebase service account key files should be ~2.3kb
 
 			if (filename.split(".").pop().toLowerCase() != "json" || filesize > filesize_limit) {
-				show_alert(validate_alert_wrapper, "this is not a Firebase service account key file", "danger");
+				utils.show_alert(validate_alert_wrapper, "this is not a Firebase service account key file", "danger");
 				return;
 			}
 
@@ -94,12 +95,12 @@
 			request.responseType = "json";
 
 			request.addEventListener("error", (evt) => {
-				show_alert(validate_alert_wrapper, "save error", "danger");
+				utils.show_alert(validate_alert_wrapper, "save error", "danger");
 			});
 
 			request.onreadystatechange = function () {
 				if (this.readyState == 4 && this.status == 200) {
-					show_alert(validate_alert_wrapper, '<div class="d-flex justify-content-center pt-1"><div class="dot-carousel mr-4"></div><span class="mt-n1">validating key and database</span><div class="dot-carousel ml-4"></div></div>', "success");
+					utils.show_alert(validate_alert_wrapper, '<div class="d-flex justify-content-center pt-1"><div class="dot-carousel mr-4"></div><span class="mt-n1">validating key and database</span><div class="dot-carousel ml-4"></div></div>', "success");
 
 					setTimeout(() => {
 						globals_r.socket.emit("validate firebase info", web_app_config);
@@ -123,10 +124,10 @@
 			const email = email_input.value.trim();
 
 			if (!email || !email.includes("@") || !email.includes(".com") || email.length < 7) {
-				show_alert(submit_alert_wrapper, "this is not an email address", "danger");
+				utils.show_alert(submit_alert_wrapper, "this is not an email address", "danger");
 				return;
 			} else if (email.endsWith("@j9108c.com")) {
-				show_alert(submit_alert_wrapper, "use your own email address", "danger");
+				utils.show_alert(submit_alert_wrapper, "use your own email address", "danger");
 				return;
 			}
 
@@ -151,14 +152,6 @@
 		if (evt.key == "Enter") {
 			(!agree_and_continue_btn.hasAttribute("disabled") ? agree_and_continue_btn.click() : null);
 		}
-	}
-
-	function show_alert(alert_wrapper, message, type) {
-		alert_wrapper.innerHTML = `
-			<div id="alert" class="alert alert-${type} fade show text-center mb-0 p-1" role="alert">
-				<span>${message}</span>
-			</div>
-		`;
 	}
 </script>
 

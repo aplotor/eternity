@@ -3,7 +3,7 @@
 **/#*
 **/node_modules/
 frontend/build/
-backend/data/
+backend/tempfiles/
 backend/logs/
 
 # keep
