@@ -1,10 +1,10 @@
 # ignore
-**/#*
 **/.*
-**/_*
-node_modules/
-data/
-logs/
+**/#*
+**/node_modules/
+frontend/build/
+backend/data/
+backend/logs/
 
 # keep
 !.git

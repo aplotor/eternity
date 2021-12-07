@@ -1,7 +1,7 @@
-const project_root = process.cwd();
+const backend = process.cwd();
 
-const filesystem = (await import("fs")).default;
-const winston = (await import("winston")).default;
+import filesystem from "fs";
+import winston from "winston";
 
 const log_logger = create_logger("info");
 const log = log_logger.info.bind(log_logger);
@@ -26,7 +26,7 @@ function create_logger(level) { // https://github.com/winstonjs/winston#logging-
 		transports: [
 			// new winston.transports.Console(),
 			new winston.transports.File({
-				filename: `${project_root}/logs/${(level == "info" ? "log" : level)}.txt`
+				filename: `${backend}/logs/${(level == "info" ? "log" : level)}.txt`
 			})
 		]
 	});
@@ -34,8 +34,8 @@ function create_logger(level) { // https://github.com/winstonjs/winston#logging-
 }
 
 function clear_logs() {
-	filesystem.closeSync(filesystem.openSync(`${project_root}/logs/log.txt`, "w"));
-	filesystem.closeSync(filesystem.openSync(`${project_root}/logs/error.txt`, "w"));
+	filesystem.closeSync(filesystem.openSync(`${backend}/logs/log.txt`, "w"));
+	filesystem.closeSync(filesystem.openSync(`${backend}/logs/error.txt`, "w"));
 	console.log("cleared all logs");
 }
 

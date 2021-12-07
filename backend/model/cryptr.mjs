@@ -1,9 +1,9 @@
-const project_root = process.cwd();
-const run_config = (project_root.toLowerCase().slice(0, 20) == "/mnt/c/users/j9108c/" ? "dev" : "prod");
+const backend = process.cwd();
+const run_config = (backend.toLowerCase().slice(0, 20) == "/mnt/c/users/j9108c/" ? "dev" : "prod");
 
-const secrets = (run_config == "dev" ? (await import(`${project_root}/_secrets.mjs`)).dev : (await import(`${project_root}/_secrets.mjs`)).prod);
+const secrets = (run_config == "dev" ? (await import(`${backend}/.secrets.mjs`)).dev : (await import(`${backend}/.secrets.mjs`)).prod);
 
-const cryptr = (await import("cryptr")).default;
+import cryptr from "cryptr";
 
 const cryptr_instance = new cryptr(secrets.encryption_key);
 

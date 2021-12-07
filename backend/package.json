@@ -1,0 +1,28 @@
+{
+	"type": "module",
+	"scripts": {
+		"dev": "nodemon ./controller/server.mjs",
+		"prod": "pm2 start ./controller/server.mjs --interpreter node --name eternity",
+		"prod_restart": "pm2 restart ./controller/server.mjs",
+		"prod_stop": "pm2 stop ./controller/server.mjs"
+	},
+	"devDependencies": {
+		"nodemon": "^2.0.7"
+	},
+	"dependencies": {
+		"axios": "^0.24.0",
+		"cookie-session": "^1.4.0",
+		"cryptr": "^6.0.2",
+		"express": "^4.17.1",
+		"express-fileupload": "^1.2.1",
+		"firebase-admin": "^10.0.0",
+		"nodemailer": "^6.7.0",
+		"passport": "^0.4.1",
+		"passport-reddit": "^0.2.4",
+		"pg": "^8.6.0",
+		"snoowrap": "^1.22.0",
+		"socket.io": "^4.1.2",
+		"socket.io-client": "^4.1.2",
+		"winston": "^3.3.3"
+	}
+}

@@ -1,0 +1,6 @@
+{
+	"ext": "mjs",
+	"ignore": [
+		"./data/"
+	]
+}

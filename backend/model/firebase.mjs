@@ -1,4 +1,4 @@
-const firebase_admin = (await import("firebase-admin")).default;
+import firebase_admin from "firebase-admin";
 
 function create_app(service_acc_key, db_url, username) {
 	const app = firebase_admin.initializeApp({

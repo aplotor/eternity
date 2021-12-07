@@ -1,15 +1,15 @@
-const project_root = process.cwd();
-const run_config = (project_root.toLowerCase().slice(0, 20) == "/mnt/c/users/j9108c/" ? "dev" : "prod");
+const backend = process.cwd();
+const run_config = (backend.toLowerCase().slice(0, 20) == "/mnt/c/users/j9108c/" ? "dev" : "prod");
 
-const secrets = (run_config == "dev" ? (await import(`${project_root}/_secrets.mjs`)).dev : (await import(`${project_root}/_secrets.mjs`)).prod);
-const logger = (await import(`${project_root}/model/logger.mjs`));
-const sql = await import(`${project_root}/model/sql.mjs`);
-const firebase = await import(`${project_root}/model/firebase.mjs`);
-const cryptr = (await import(`${project_root}/model/cryptr.mjs`));
-const email = (await import(`${project_root}/model/email.mjs`));
-const epoch = await import(`${project_root}/model/epoch.mjs`);
+const secrets = (run_config == "dev" ? (await import(`${backend}/.secrets.mjs`)).dev : (await import(`${backend}/.secrets.mjs`)).prod);
+const logger = await import(`${backend}/model/logger.mjs`);
+const sql = await import(`${backend}/model/sql.mjs`);
+const firebase = await import(`${backend}/model/firebase.mjs`);
+const cryptr = await import(`${backend}/model/cryptr.mjs`);
+const email = await import(`${backend}/model/email.mjs`);
+const epoch = await import(`${backend}/model/epoch.mjs`);
 
-const snoowrap = (await import("snoowrap")).default;
+import snoowrap from "snoowrap";
 
 const usernames_to_socket_ids = {};
 const socket_ids_to_usernames = {};
@@ -63,7 +63,7 @@ class User {
 	async save() {
 		let user_for_comparison = null;
 		try {
-			user_for_comparison = await get(this.username);
+			user_for_comparison = await get(this.username, true);
 		} catch (err) {
 			if (err != `Error: user (${this.username}) dne`) {
 				console.error(err);
@@ -436,8 +436,8 @@ async function fill_usernames_to_socket_ids() {
 	}
 }
 
-async function get(username) {
-	console.log(`getting user (${username})`);
+async function get(username, existence_check=false) {
+	(existence_check ? console.log(`checking if user (${username}) exists`) : console.log(`getting user (${username})`));
 
 	const rows = await sql.query(`
 		select * from user_ 
@@ -516,25 +516,26 @@ async function update_all(io) { // synchronous one-by-one user update till all u
 										await user.update();
 										
 										const post_update_lndes = Object.entries(user.category_update_info).map((entry) => entry[1].latest_new_data_epoch);
-	
-										if (usernames_to_socket_ids[user.username]) {
+										
+										const socket_id = usernames_to_socket_ids[user.username];
+										if (socket_id) {
 											for (let i = 0; i < 6; i++) { // 6 categories
 												if (post_update_lndes[i] > pre_update_lndes[i]) {
 													const app = firebase.create_app(JSON.parse(cryptr.decrypt(user.firebase_service_acc_key_encrypted)), JSON.parse(cryptr.decrypt(user.firebase_web_app_config_encrypted)).databaseURL, user.username);
 													const auth_token = await firebase.create_new_auth_token(app);
 													firebase.free_app(app).catch((err) => console.error(err));
 	
-													io.to(usernames_to_socket_ids[user.username]).emit("store data", false, JSON.parse(cryptr.decrypt(user.firebase_web_app_config_encrypted)), auth_token);
+													io.to(socket_id).emit("store data", false, JSON.parse(cryptr.decrypt(user.firebase_web_app_config_encrypted)), auth_token);
 													break;
 												}
 											}
 	
-											io.to(usernames_to_socket_ids[user.username]).emit("store last updated epoch", user.last_updated_epoch);
+											io.to(socket_id).emit("store last updated epoch", user.last_updated_epoch);
 										}
 									}	
 								} else {
-									if (!user.email_notif.last_inactive_notif_epoch) {
-										email.send(user, "account inactivity notice", "you have not used eternity for more than 6 months. as such, your eternity account has been marked inactive and new Reddit data will not continue to sync to your database. to resolve this, log in to eternity");
+									if (epoch.now() - user.email_notif.last_inactive_notif_epoch >= 7776000) { // 3mo
+										email.send(user, "account inactivity notice", "you have not used eternity for 6 or more consecutive months at this time. as such, your eternity account has been marked inactive and new Reddit data will not continue to sync to your database. to resolve this, log in to eternity");
 										user.email_notif.last_inactive_notif_epoch = epoch.now();
 										sql.query(`
 											update user_ 
@@ -576,7 +577,9 @@ async function update_all(io) { // synchronous one-by-one user update till all u
 function cycle_update_all(io) {
 	update_all(io).catch((err) => console.error(err));
 
-	setInterval(() => (update_all_completed ? update_all(io).catch((err) => console.error(err)) : null), 60000); // 1min
+	setInterval(() => {
+		(update_all_completed ? update_all(io).catch((err) => console.error(err)) : null);
+	}, 60000); // 1min
 }
 
 export {

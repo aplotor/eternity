@@ -1,10 +1,10 @@
-const project_root = process.cwd();
-const run_config = (project_root.toLowerCase().slice(0, 20) == "/mnt/c/users/j9108c/" ? "dev" : "prod");
+const backend = process.cwd();
+const run_config = (backend.toLowerCase().slice(0, 20) == "/mnt/c/users/j9108c/" ? "dev" : "prod");
 
-const secrets = (run_config == "dev" ? (await import(`${project_root}/_secrets.mjs`)).dev : (await import(`${project_root}/_secrets.mjs`)).prod);
-const cryptr = (await import(`${project_root}/model/cryptr.mjs`));
+const secrets = (run_config == "dev" ? (await import(`${backend}/.secrets.mjs`)).dev : (await import(`${backend}/.secrets.mjs`)).prod);
+const cryptr = await import(`${backend}/model/cryptr.mjs`);
 
-const nodemailer = (await import("nodemailer")).default;
+import nodemailer from "nodemailer";
 
 const transporter = nodemailer.createTransport({
 	service: "gmail",
@@ -29,7 +29,7 @@ function send_email(user, subject, msg) {
 			<br/>
 			<br/>
 			<span>—</span><br/>
-			<a href="https://www.j9108c.com/apps/eternity" target="_blank">eternity</a>
+			<a href="https://eternity.j9108c.com" target="_blank">eternity</a>
 		`
 	};
 

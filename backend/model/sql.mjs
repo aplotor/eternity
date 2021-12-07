@@ -1,10 +1,10 @@
-const project_root = process.cwd();
-const run_config = (project_root.toLowerCase().slice(0, 20) == "/mnt/c/users/j9108c/" ? "dev" : "prod");
+const backend = process.cwd();
+const run_config = (backend.toLowerCase().slice(0, 20) == "/mnt/c/users/j9108c/" ? "dev" : "prod");
 
-const secrets = (run_config == "dev" ? (await import(`${project_root}/_secrets.mjs`)).dev : (await import(`${project_root}/_secrets.mjs`)).prod);
+const secrets = (run_config == "dev" ? (await import(`${backend}/.secrets.mjs`)).dev : (await import(`${backend}/.secrets.mjs`)).prod);
 
-const node_pg = (await import("pg")).default;
-const axios = (await import("axios")).default;
+import node_pg from "pg";
+import axios from "axios";
 
 const pool = new node_pg.Pool({ // https://node-postgres.com/api/pool
 	connectionString: secrets.sql_connection,
@@ -89,7 +89,9 @@ async function backup_db() {
 function cycle_backup_db() {
 	backup_db().catch((err) => console.error(err));
 
-	setInterval(() => backup_db().catch((err) => console.error(err)), 86400000); // 24h
+	setInterval(() => {
+		backup_db().catch((err) => console.error(err));
+	}, 86400000); // 24h
 }
 
 async function query(query) {
@@ -125,7 +127,9 @@ async function get_maintenance_status(maintenance_active) {
 function cycle_get_maintenance_status(maintenance_active) {
 	get_maintenance_status(maintenance_active).catch((err) => console.error(err));
 
-	setInterval(() => get_maintenance_status(maintenance_active).catch((err) => console.error(err)), 10000);
+	setInterval(() => {
+		get_maintenance_status(maintenance_active).catch((err) => console.error(err));
+	}, 10000);
 }
 
 export {

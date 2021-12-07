@@ -3,32 +3,16 @@
 	"name": "eternity",
 	"repository": "github:j9108c/eternity",
 	"license": "AGPL3",
-	"type": "module",
-	"main": "./controller/server.mjs",
 	"scripts": {
-		"dev": "nodemon ./controller/server.mjs",
-		"prod_start": "pm2 start ./controller/server.mjs --interpreter node --name eternity",
-		"prod_restart": "pm2 restart ./controller/server.mjs",
-		"prod_stop": "pm2 stop ./controller/server.mjs"
+		"dev": "concurrently --names \"backend,frontend\" --prefix \"{name}:\" --prefix-colors \"#f2caff,#61f2f2\" \"cd ./backend/ && npm run dev\" \"wait-on tcp:1201 && cd ./frontend/ && npm run dev\"",
+		"build": "cd ./frontend/ && npm run build",
+		"prod": "cd ./backend/ && npm run prod",
+		"prod_update": "npm run prod_stop && git pull && (cd ./frontend/ && npm install) && (cd ./backend/ && npm install) && npm run build && npm run prod",
+		"prod_restart": "cd ./backend/ && npm run prod_restart",
+		"prod_stop": "cd ./backend/ && npm run prod_stop"
 	},
 	"devDependencies": {
-		"nodemon": "^2.0.6"
-	},
-	"dependencies": {
-		"axios": "^0.24.0",
-		"cookie-session": "^1.4.0",
-		"cryptr": "^6.0.2",
-		"express": "^4.17.1",
-		"express-fileupload": "^1.2.1",
-		"express-handlebars": "^4.0.6",
-		"firebase-admin": "^10.0.0",
-		"nodemailer": "^6.7.0",
-		"passport": "^0.4.1",
-		"passport-reddit": "^0.2.4",
-		"pg": "^8.6.0",
-		"snoowrap": "^1.22.0",
-		"socket.io": "^4.1.2",
-		"socket.io-client": "^4.1.2",
-		"winston": "^3.3.3"
+		"concurrently": "^6.4.0",
+		"wait-on": "^6.0.0"
 	}
 }
