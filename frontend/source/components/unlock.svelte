@@ -21,30 +21,50 @@
 		instruction_video_anchor,
 		instruction_video_wrapper,
 		email_input,
-		submit_btn,
-		submit_alert_wrapper,
+		verify_btn,
+		verify_alert_wrapper,
 		agree_and_continue_btn
 	] = [null];
 	svelte.onMount(() => {
 		globals_r.socket.emit("page switch", "unlock");
 
 		globals_r.socket.on("alert", (alert, msg, type) => {
-			if (alert == "validate") {
-				utils.show_alert(validate_alert_wrapper, msg, type);
-			} else if (alert == "submit") {
-				utils.show_alert(submit_alert_wrapper, msg, type);
+			switch (alert) {
+				case "validate":
+					utils.show_alert(validate_alert_wrapper, msg, type);
+					break;
+				case "verify":
+					utils.show_alert(verify_alert_wrapper, msg, type);
+					break;
+				default:
+					break;
+			}
+		});
+
+		globals_r.socket.on("disable button", (button) => {
+			switch (button) {
+				case "validate":
+					validate_btn.setAttribute("disabled", "");
+					break;
+				case "verify":
+					verify_btn.setAttribute("disabled", "");
+					break;
+				default:
+					break;
 			}
 		});
 
 		globals_r.socket.on("allow agree and continue", () => {
-			validate_btn.setAttribute("disabled", "");
-			submit_btn.setAttribute("disabled", "");
 			jQuery('[data-toggle="tooltip"]').tooltip("disable");
 			agree_and_continue_btn.removeAttribute("disabled");
 		});
 
 		globals_r.socket.on("switch page to loading", () => {
 			dispatch("dispatch", "switch page to loading");
+		});
+
+		globals_r.socket.on("emit back encrypted token", (encrypted_token) => {
+			globals_r.socket.emit("verify token", encrypted_token);
 		});
 
 		jQuery('[data-toggle="tooltip"]').tooltip("enable");
@@ -54,7 +74,17 @@
 		});
 
 		config_input.addEventListener("keydown", (evt) => {
-			(evt.key == "Enter" ? validate_btn.click() : null);
+			switch (evt.key) {
+				case "Enter":
+					validate_btn.click();
+					break;
+				case "Tab":
+					evt.preventDefault();
+					email_input.focus();
+					break;
+				default:
+					break;
+			}
 		});
 
 		validate_btn.addEventListener("click", (evt) => {
@@ -117,21 +147,18 @@
 		});
 
 		email_input.addEventListener("keydown", (evt) => {
-			(evt.key == "Enter" ? submit_btn.click() : null);
+			(evt.key == "Enter" ? verify_btn.click() : null);
 		});
 
-		submit_btn.addEventListener("click", (evt) => {
+		verify_btn.addEventListener("click", (evt) => {
 			const email = email_input.value.trim();
 
-			if (!email || !email.includes("@") || !email.includes(".com") || email.length < 7) {
-				utils.show_alert(submit_alert_wrapper, "this is not an email address", "danger");
-				return;
-			} else if (email.endsWith("@j9108c.com")) {
-				utils.show_alert(submit_alert_wrapper, "use your own email address", "danger");
+			if (!(email && email.includes("@") && email.includes(".") && email.length >= 7)) {
+				utils.show_alert(verify_alert_wrapper, "this is not an email address", "warning");
 				return;
 			}
 
-			globals_r.socket.emit("check email", email);
+			globals_r.socket.emit("verify email", email);
 		});
 
 		agree_and_continue_btn.addEventListener("click", (evt) => {
@@ -144,6 +171,8 @@
 	});
 	svelte.onDestroy(() => {
 		globals_r.socket.off("alert");
+		globals_r.socket.off("disable button");
+		globals_r.socket.off("emit back encrypted token");
 		globals_r.socket.off("allow agree and continue");
 		globals_r.socket.off("switch page to loading");
 	});
@@ -164,8 +193,9 @@
 			<p>to use eternity, you will need to go to <a href="https://console.firebase.google.com" target="_blank">Firebase console</a> and</p>
 			<ul class="line_height_1 mt-n2">
 				<li class="mt-3">create a new Firebase project <span class="text-light">named "eternity-{username}" (without the quotes)</span></li>
-				<li class="mt-2">create a Realtime Database where your Reddit data will be stored (it is free up to 1gb disk storage, which should be enough to last you a lifetime)</li>
+				<li class="mt-2">create a Realtime Database where your Reddit data will be stored (it is free up to 1gb disk storage, which should be enough to last you a very long time)</li>
 				<li class="mt-2">set the Realtime Database read and write security rules to "auth.token.owner == true" (with the quotes)</li>
+				<li class="mt-2">enable Authentication from domain "eternity.j9108c.com"</li>
 				<li class="mt-2">get a service account key file and a web app config</li>
 				<li class="no_bullet d-flex mt-2">
 					<div class="w-100">
@@ -187,12 +217,13 @@
 				<li class="mt-2">you must log in to eternity at least once every 6 months or else your eternity account will be marked inactive and new Reddit data will not continue to sync to your database</li>
 				<li class="mt-2">do not edit any of the Firebase project settings or database contents directly from Firebase. if you do and your eternity instance stops working, you may have to restart</li>
 				<li class="mt-2">if by any chance you exceed the Firebase free tier disk storage, you will need to upgrade your Firebase plan in order for eternity to continue storing your new Reddit data. or, you can choose to export out the existing data and wipe the database to continue for free</li>
-				<li class="mt-2">any notifications and updates regarding your eternity account (e.g., your account becomes inactive, you reach the storage limit) will be sent from <a href="mailto:eternity@j9108c.com">eternity@j9108c.com</a> to your email</li>
+				<!-- <li class="mt-2">any notifications and updates regarding your eternity account (e.g., your account becomes inactive, you reach the storage limit) will be sent from <a href="mailto:eternity@j9108c.com">eternity@j9108c.com</a> to your email</li> -->
+				<li class="mt-2">any notifications and updates regarding your eternity account (e.g., your account becomes inactive, you reach the storage limit) will be sent to your email</li>
 				<li class="no_bullet d-flex mt-2">
 					<input bind:this={email_input} type="text" class="form-control bg-light" placeholder="your email address"/>
-					<button bind:this={submit_btn} class="btn btn-primary shadow-none ml-2">submit</button>
+					<button bind:this={verify_btn} class="btn btn-primary shadow-none ml-2">verify</button>
 				</li>
-				<li class="no_bullet mt-2"><div bind:this={submit_alert_wrapper}></div></li>
+				<li class="no_bullet mt-2"><div bind:this={verify_alert_wrapper}></div></li>
 			</ul>
 			<div data-toggle="tooltip" data-placement="top" title="complete the required steps above first">
 				<button bind:this={agree_and_continue_btn} class="btn btn-primary shadow-none w-100 mt-3" disabled>agree and continue</button>

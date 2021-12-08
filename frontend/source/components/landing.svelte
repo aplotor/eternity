@@ -16,7 +16,7 @@
 <div class="text-center mt-3">
 	<div class="jumbotron bg-dark mb-0 py-5">
 		<h1 class="display-4">{globals_r.app_name}</h1>
-		<p class="lead text-left">{globals_r.description}</p>
+		<p class="lead text-left">bypass Reddit's 1000-item listing limits by externally storing your Reddit items (saved, created, upvoted, downvoted, hidden) in your own database</p>
 		<p class="lead text-left">additional functionality: search for items, filter by subreddit, bulk export data</p>
 		<hr class="bg-secondary my-4"/>
 		<p class="lead text-left">required <a href="https://www.reddit.com/dev/api/oauth" target="_blank">Reddit api oauth2 scopes</a>::</p>

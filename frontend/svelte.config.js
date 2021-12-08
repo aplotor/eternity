@@ -11,6 +11,7 @@ export default {
 			routes: "./source/routes/",
 			assets: "./static/"
 		},
+		trailingSlash: "never",
 		vite: { // https://vitejs.dev/config
 			resolve: {
 				alias: {

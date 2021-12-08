@@ -17,7 +17,7 @@ const transporter = nodemailer.createTransport({
 	}
 });
 
-function send_email(user, subject, msg) {
+function send(user, subject, msg) {
 	const mail_options = {
 		from: `eternity <${secrets.nodemailer_gmail_addr}>`,
 		to: cryptr.decrypt(user.email_encrypted),
@@ -29,7 +29,7 @@ function send_email(user, subject, msg) {
 			<br/>
 			<br/>
 			<span>—</span><br/>
-			<a href="https://eternity.j9108c.com" target="_blank">eternity</a>
+			<a href=${(run_config == "dev" ? "http://localhost:1200" : "https://eternity.j9108c.com")} target="_blank">eternity</a>
 		`
 	};
 
@@ -37,5 +37,5 @@ function send_email(user, subject, msg) {
 }
 
 export {
-	send_email
+	send
 };

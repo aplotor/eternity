@@ -9,6 +9,7 @@ const firebase = await import(`${backend}/model/firebase.mjs`);
 const cryptr = await import(`${backend}/model/cryptr.mjs`);
 const user = await import(`${backend}/model/user.mjs`);
 const epoch = await import(`${backend}/model/epoch.mjs`);
+const email = await import(`${backend}/model/email.mjs`);
 
 import * as socket_io_server from "socket.io";
 import * as socket_io_client from "socket.io-client";
@@ -29,11 +30,12 @@ const io = new socket_io_server.Server(server, {
 	cors: (run_config == "dev" ? {origin: "*"} : null)
 });
 const app_socket = socket_io_client.connect("http://localhost:1026", {
+	autoConnect: false,
 	reconnect: true,
 	extraHeaders: {
 		app: app_name,
-		port: (run_config == "dev" ? secrets.port - 1 : secrets.port),
-		app_socket_secret: secrets.app_socket_secret
+		port: secrets.port - 1,
+		secret: secrets.app_socket_secret
 	}
 });
 
@@ -41,7 +43,7 @@ const app_socket = socket_io_client.connect("http://localhost:1026", {
 await sql.init_db();
 sql.cycle_backup_db();
 await user.fill_usernames_to_socket_ids();
-// user.cycle_update_all(io); // TODO enable later
+user.cycle_update_all(io);
 process.nextTick(() => {
 	sql.cycle_get_maintenance_status(maintenance_active);
 });
@@ -49,6 +51,7 @@ process.nextTick(() => {
 const frontend = backend.replace("backend", "frontend");
 let countdown_copy = null;
 let domain_request_info_copy = null;
+let dev_private_ip_copy = null;
 const maintenance_active = [false];
 
 if (run_config == "dev") {
@@ -133,7 +136,31 @@ app.use(cookie_session({ // https://expressjs.com/en/resources/middleware/cookie
 app.use(passport.initialize());
 app.use(passport.session());
 
-app.get("/authentication_check", async (req, res) => {
+app.get("/login", (req, res, next) => {
+	passport.authenticate("reddit", { // https://github.com/Slotos/passport-reddit/blob/9717523d3d3f58447fee765c0ad864592efb67e8/examples/login/app.js#L86
+		state: req.session.state = crypto.randomBytes(32).toString("hex"),
+		duration: "permanent"
+	})(req, res, next);
+});
+
+app.get("/callback", (req, res, next) => {
+	if (req.query.state == req.session.state) {
+		passport.authenticate("reddit", (err, u, info) => {
+			if (err || !u) {
+				res.status(401).sendFile(`${frontend}/build/index.html`);
+			} else {
+				// console.log(u);
+				req.login(u, () => {
+					res.redirect(302, "/");
+				});
+			}
+		})(req, res, next);
+	} else {
+		res.status(401).sendFile(`${frontend}/build/index.html`);
+	}
+});
+
+app.get("/authentication_check", (req, res) => {
 	if (req.isAuthenticated()) {
 		user.usernames_to_socket_ids[req.user.username] = req.query.socket_id;
 		user.socket_ids_to_usernames[req.query.socket_id] = req.user.username;
@@ -159,27 +186,20 @@ app.get("/authentication_check", async (req, res) => {
 	}
 });
 
-app.get("/login", (req, res, next) => {
-	passport.authenticate("reddit", { // https://github.com/Slotos/passport-reddit/blob/9717523d3d3f58447fee765c0ad864592efb67e8/examples/login/app.js#L86
-		state: req.session.state = crypto.randomBytes(32).toString("hex"),
-		duration: "permanent"
-	})(req, res, next);
-});
+app.get("/email_verification", (req, res) => {
+	const encrypted_token = req.query.token;
+	const decrypted_token = cryptr.decrypt(encrypted_token);
 
-app.get("/callback", (req, res, next) => {
-	if (req.query.state == req.session.state) {
-		passport.authenticate("reddit", (err, u, info) => {
-			if (err || !u) {
-				res.status(401).sendFile(`${frontend}/build/index.html`);
-			} else {
-				// console.log(u);
-				req.login(u, () => {
-					res.redirect(302, "/");
-				});
-			}
-		})(req, res, next);
+	const username_from_token = decrypted_token.split(" ")[0];
+	const socket_id_from_token = decrypted_token.split(" ")[1];
+
+	if (user.usernames_to_socket_ids[username_from_token] && user.socket_ids_to_usernames[socket_id_from_token]) {
+		io.to(socket_id_from_token).emit("emit back encrypted token", encrypted_token);
+		res.send("ok");
+		console.log(`email verification (${username_from_token}) ok`);
 	} else {
-		res.status(401).sendFile(`${frontend}/build/index.html`);
+		res.send("fail");
+		console.log(`email verification (${username_from_token}) fail`);
 	}
 });
 
@@ -328,25 +348,45 @@ io.on("connect", (socket) => {
 		socket.firebase_service_acc_key_encrypted = cryptr.encrypt(JSON.stringify(key_obj));
 		socket.firebase_web_app_config_encrypted = cryptr.encrypt(JSON.stringify(web_app_config));
 		io.to(socket.id).emit("alert", "validate", "validation success", "success");
+		io.to(socket.id).emit("disable button", "validate");
 
-		(socket.firebase_service_acc_key_encrypted && socket.firebase_web_app_config_encrypted && socket.email_encrypted ? io.to(socket.id).emit("allow agree and continue") : null);
+		(socket.firebase_service_acc_key_encrypted && socket.firebase_web_app_config_encrypted && socket.verified_email ? io.to(socket.id).emit("allow agree and continue") : null);
 	});
 
-	socket.on("check email", (email) => { // TODO check email ➔ validate email
-		email = email.trim();
+	socket.on("verify email", (email_addr) => {
+		email_addr = email_addr.trim();
 
-		if (!email || !email.includes("@") || !email.includes(".com") || email.length < 7) {
-			io.to(socket.id).emit("alert", "submit", "this is not an email address", "danger");
-			return;
-		} else if (email.endsWith("@j9108c.com")) {
-			io.to(socket.id).emit("alert", "submit", "use your own email address", "danger");
+		if (!(email_addr && email_addr.includes("@") && email_addr.includes(".") && email_addr.length >= 7)) {
+			io.to(socket.id).emit("alert", "verify", "this is not an email address", "danger");
 			return;
 		}
 
-		socket.email_encrypted = cryptr.encrypt(email);
-		io.to(socket.id).emit("alert", "submit", "ok", "success");
+		io.to(socket.id).emit("disable button", "verify");
+		
+		const obj = {
+			username: username,
+			email_encrypted: socket.email_encrypted = cryptr.encrypt(email_addr)
+		};
+		const verification_url = `${(run_config == "dev" ? "http://"+dev_private_ip_copy+":"+secrets.port : "https://eternity.j9108c.com")}/email_verification?token=${cryptr.encrypt(username + " " + socket.id)}`;
+		email.send(obj, "verify your email", `you have requested a new eternity account and specified this email (<a href="mailto:${email_addr}">${email_addr}</a>) as contact. to continue, click this link: <a href="${verification_url}" target="_blank">${verification_url}</a>. if you did not do this, please ignore this email`);
 
-		(socket.firebase_service_acc_key_encrypted && socket.firebase_web_app_config_encrypted && socket.email_encrypted ? io.to(socket.id).emit("allow agree and continue") : null);
+		io.to(socket.id).emit("alert", "verify", "click on the link sent to this email to verify that it's your email. the verification must be done while this page is open, so don't close or navigate away from this page", "primary");
+	});
+
+	socket.on("verify token", (encrypted_token) => {
+		const decrypted_token = cryptr.decrypt(encrypted_token);
+	
+		const username_from_token = decrypted_token.split(" ")[0];
+		const socket_id_from_token = decrypted_token.split(" ")[1];
+		if (!(username_from_token == username && socket_id_from_token == socket.id)) {
+			io.to(socket.id).emit("alert", "verify", "verification failed", "danger");
+			return;
+		} else {
+			socket.verified_email = true;
+			io.to(socket.id).emit("alert", "verify", "verification success", "success");
+		}
+
+		(socket.firebase_service_acc_key_encrypted && socket.firebase_web_app_config_encrypted && socket.verified_email ? io.to(socket.id).emit("allow agree and continue") : null);
 	});
 	
 	socket.on("save firebase info and email", async () => {
@@ -389,6 +429,12 @@ app_socket.on("update countdown", (countdown) => {
 app_socket.on("update domain request info", (domain_request_info) => {
 	io.emit("update domain request info", domain_request_info_copy = domain_request_info);
 });
+
+app_socket.on("store dev private ip", (dev_private_ip) => {
+	dev_private_ip_copy = dev_private_ip;
+});
+
+app_socket.connect();
 
 server.listen(secrets.port, secrets.host, () => {
 	console.log(`server (${app_name}) started on (localhost:${secrets.port})`);

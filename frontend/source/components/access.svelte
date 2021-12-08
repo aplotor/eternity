@@ -195,7 +195,7 @@
 			const item_id = evt.target.parentElement.parentElement.classList[0];
 			const item_category = active_category;
 			const item_type = document.getElementById(item_id).dataset.type;
-			// console.log(item_id, item_category, item_type);
+			console.log(item_id, item_category, item_type);
 
 			if (delete_from == "eternity" || delete_from == "both") {
 				const list_item = document.getElementById(item_id);
@@ -217,7 +217,7 @@
 				}
 			}
 			if (delete_from == "Reddit" || delete_from == "both") {
-				socket.emit("delete item from reddit acc", item_id, item_category, item_type);
+				globals_r.socket.emit("delete item from reddit acc", item_id, item_category, item_type);
 			}
 		} else if (!evt.target.classList.contains("row_2_popover_btn") && document.getElementsByClassName("popover")[0] && document.getElementsByClassName("popover")[0].contains(evt.target)) {
 			null;

@@ -6,10 +6,9 @@
 	"scripts": {
 		"dev": "concurrently --names \"backend,frontend\" --prefix \"{name}:\" --prefix-colors \"#f2caff,#61f2f2\" \"cd ./backend/ && npm run dev\" \"wait-on tcp:1201 && cd ./frontend/ && npm run dev\"",
 		"build": "cd ./frontend/ && npm run build",
-		"prod": "cd ./backend/ && npm run prod",
-		"prod_update": "npm run prod_stop && git pull && (cd ./frontend/ && npm install) && (cd ./backend/ && npm install) && npm run build && npm run prod",
-		"prod_restart": "cd ./backend/ && npm run prod_restart",
-		"prod_stop": "cd ./backend/ && npm run prod_stop"
+		"prod_start": "cd ./backend/ && npm run prod_start",
+		"prod_stop": "cd ./backend/ && npm run prod_stop",
+		"prod_update": "npm run prod_stop && git pull && (cd ./frontend/ && npm install) && (cd ./backend/ && npm install) && npm run build && npm run prod_start"
 	},
 	"devDependencies": {
 		"concurrently": "^6.4.0",
