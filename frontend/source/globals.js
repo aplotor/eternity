@@ -14,7 +14,7 @@ const readonly = {
 	j9108c_url: (run_config == "dev" ? `http://${(env.browser ? location.hostname : "localhost")}:1025` : "http://j9108c.com")
 };
 
-const writable = svelte_store.writable({ // state
+const writable = svelte_store.writable({ // global state
 	
 });
 

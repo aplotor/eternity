@@ -270,7 +270,7 @@ io.on("connect", (socket) => {
 					const auth_token = await firebase.create_new_auth_token(app);
 					firebase.free_app(app).catch((err) => console.error(err));
 			
-					io.to(socket.id).emit("store data", true, JSON.parse(cryptr.decrypt(u.firebase_web_app_config_encrypted)), auth_token);
+					io.to(socket.id).emit("initialize", JSON.parse(cryptr.decrypt(u.firebase_web_app_config_encrypted)), auth_token);
 					io.to(socket.id).emit("store last updated epoch", u.last_updated_epoch);
 
 					sql.query(`

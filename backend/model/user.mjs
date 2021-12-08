@@ -251,21 +251,21 @@ class User {
 			before: this.category_update_info[category][`latest_fn_${type}`] // "before" is actually chronologically after. https://www.reddit.com/dev/api/#listings
 		}
 
-		if (category == "saved") {
+		if (category == "saved") { // posts, comments
 			listing = await this.me.getSavedContent(options);
-		} else if (category == "created") {
+		} else if (category == "created") { // posts, comments
 			if (type == "posts") {
 				listing = await this.me.getSubmissions(options);
 			} else if (type == "comments") {
 				listing = await this.me.getComments(options);
 			}
-		} else if (category == "upvoted") {
+		} else if (category == "upvoted") { // posts
 			listing = await this.me.getUpvotedContent(options);
-		} else if (category == "downvoted") {
+		} else if (category == "downvoted") { // posts
 			listing = await this.me.getDownvotedContent(options);
-		} else if (category == "hidden") {
+		} else if (category == "hidden") { // posts
 			listing = await this.me.getHiddenContent(options);
-		} else if (category == "awarded") {
+		} else if (category == "awarded") { // posts, comments
 			listing = await this.me._getListing({
 				uri: `u/${this.username}/gilded/given`,
 				qs: options
@@ -511,24 +511,19 @@ async function update_all(io) { // synchronous one-by-one user update till all u
 
 								if (epoch.now() - user.last_active_epoch <= 15552000) { // 6mo
 									if (user.last_updated_epoch && epoch.now() - user.last_updated_epoch >= 30) {
-										const pre_update_lndes = Object.entries(user.category_update_info).map((entry) => entry[1].latest_new_data_epoch);
+										const pre_update_category_update_info = JSON.parse(JSON.stringify(user.category_update_info));
 	
 										await user.update();
 										
-										const post_update_lndes = Object.entries(user.category_update_info).map((entry) => entry[1].latest_new_data_epoch);
+										const post_update_category_update_info = user.category_update_info;
 										
 										const socket_id = usernames_to_socket_ids[user.username];
 										if (socket_id) {
-											for (let i = 0; i < 6; i++) { // 6 categories
-												if (post_update_lndes[i] > pre_update_lndes[i]) {
-													const app = firebase.create_app(JSON.parse(cryptr.decrypt(user.firebase_service_acc_key_encrypted)), JSON.parse(cryptr.decrypt(user.firebase_web_app_config_encrypted)).databaseURL, user.username);
-													const auth_token = await firebase.create_new_auth_token(app);
-													firebase.free_app(app).catch((err) => console.error(err));
-	
-													io.to(socket_id).emit("store data", false, JSON.parse(cryptr.decrypt(user.firebase_web_app_config_encrypted)), auth_token);
-													break;
-												}
+											const categories_w_new_data = [];
+											for (const category in user.category_update_info) {
+												(post_update_category_update_info[category].latest_new_data_epoch > pre_update_category_update_info[category].latest_new_data_epoch ? categories_w_new_data.push(category) : null);
 											}
+											(categories_w_new_data.length != 0 ? io.to(socket_id).emit("show refresh alert", categories_w_new_data) : null);
 	
 											io.to(socket_id).emit("store last updated epoch", user.last_updated_epoch);
 										}

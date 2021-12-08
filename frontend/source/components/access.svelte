@@ -14,15 +14,18 @@
 	let firebase_app_instance = null;
 	let firebase_auth_instance = null;
 	let firebase_db_instance = null;
+	let firebase_db_url = null;
 
-	let data_in_use = create_new_data_frame();
-	let data_pending_refresh = create_new_data_frame();
 	let last_updated_epoch = null;
-
+	
+	let active_data = { // active_category data ONLY
+		items: {},
+		item_sub_icon_urls: {}
+	};
 	let active_category = "saved";
 	let active_type = "all";
 	let active_search_str = null;
-	let active_item_ids = null; // active as in all currently avail items; not items currently displayed
+	let active_item_ids = null; // ids of filtered items (by selected type, subreddit, and search string). only these items will be listed in item_list from active_data
 	let items_currently_listed = 0;
 
 	let item_list = null;
@@ -47,38 +50,25 @@
 		subreddit_select_dropdown,
 		category_btn_group,
 		type_btn_group,
-		// item_list,
 		skeleton_list,
 		new_data_alert_wrapper
 	] = [null];
 	svelte.onMount(async () => {
 		globals_r.socket.emit("page switch", "access");
 
-		globals_r.socket.on("store data", async (first_time, config, auth_token) => {
-			try {
-				(!first_time ? await firebase_app_instance.delete() : null); // deletes instance from memory; does not actually delete anything else
+		globals_r.socket.on("initialize", async (config, auth_token) => {
+			firebase_db_url = config.databaseURL;
 
+			try {
 				firebase_app_instance = firebase.initializeApp(config);
 				firebase_auth_instance = firebase.auth(firebase_app_instance);
 				await firebase_auth_instance.signInWithCustomToken(auth_token);
-
 				firebase_db_instance = firebase.database(firebase_app_instance);
-				const ref = firebase_db_instance.ref().root;
-				const snapshot = await ref.get();
-				const data = snapshot.val();
 
-				if (first_time) { // i.e., from "page switch"
-					store_data(data, data_in_use);
-
-					hide_skeleton_loading();
-					refresh_item_list(true);
-					fill_subreddit_select();
-				} else { // from update_all
-					store_data(data, data_pending_refresh);
-		
-					(new_data_alert_wrapper.classList.contains("d-none") ? new_data_alert_wrapper.classList.remove("d-none") : null);
-					utils.show_alert(new_data_alert_wrapper, '<span class="ml-1">new data available!</span><button id="refresh_btn" class="btn btn-sm btn-primary ml-2">refresh</button>', "primary");
-				}
+				await get_parse_set_data(active_category);
+				refresh_item_list();
+				hide_skeleton_loading();
+				fill_subreddit_select();
 			} catch (err) {
 				console.error(err);
 			}
@@ -86,6 +76,16 @@
 		
 		globals_r.socket.on("store last updated epoch", (epoch) => {
 			last_updated_epoch = epoch;
+		});
+
+		globals_r.socket.on("show refresh alert", (categories_w_new_data) => {
+			for (const category of categories_w_new_data) {
+				if (category == active_category) {
+					(new_data_alert_wrapper.classList.contains("d-none") ? new_data_alert_wrapper.classList.remove("d-none") : null);
+					utils.show_alert(new_data_alert_wrapper, '<span class="ml-1">new data available!</span><button id="refresh_btn" class="btn btn-sm btn-primary ml-2">refresh</button>', "primary");
+					break;
+				}
+			}
 		});
 		
 		setInterval(() => {
@@ -129,8 +129,9 @@
 		
 	});
 	svelte.onDestroy(() => {
-		globals_r.socket.off("store data");
+		globals_r.socket.off("initialize");
 		globals_r.socket.off("store last updated epoch");
+		globals_r.socket.off("show refresh alert");
 	});
 
 	async function handle_window_click(evt) {
@@ -210,7 +211,7 @@
 	
 					list_item.remove();
 					active_item_ids.splice(active_item_ids.indexOf(item_id), 1);
-					delete data_in_use[item_category].items[item_id];
+					delete active_data.items[item_id];
 				} catch (err) {
 					console.error(err);
 				}
@@ -226,24 +227,27 @@
 
 		if (evt.target.parentElement == category_btn_group) {
 			const selected_category = await new Promise((resolve, reject) => setTimeout(() => {
-				let selected_category = null;
+				let category = null;
 				for (const btn of [...category_btn_group.children]) {
-					(btn.classList.contains("active") ? selected_category = btn.innerText : null);
+					(btn.classList.contains("active") ? category = btn.innerText : null);
 				}
-				resolve(selected_category);
+				resolve(category);
 			}, 100));
 			if (selected_category != active_category) {
 				active_category = selected_category;
+				show_skeleton_loading();
+				await get_parse_set_data(active_category);
 				refresh_item_list();
+				hide_skeleton_loading();
 				fill_subreddit_select();
 			}
 		} else if (evt.target.parentElement == type_btn_group) {
 			const selected_type = await new Promise((resolve, reject) => setTimeout(() => {
-				let selected_type = null;
+				let type = null;
 				for (const btn of [...type_btn_group.children]) {
-					(btn.classList.contains("active") ? selected_type = btn.innerText : null);
+					(btn.classList.contains("active") ? type = btn.innerText : null);
 				}
-				resolve(selected_type);
+				resolve(type);
 			}, 100));
 			if (selected_type != active_type) {
 				active_type = selected_type;
@@ -254,7 +258,10 @@
 
 		if (evt.target.id == "refresh_btn") {
 			new_data_alert_wrapper.classList.add("d-none");
+			show_skeleton_loading();
+			await get_parse_set_data(active_category);
 			refresh_item_list();
+			hide_skeleton_loading();
 			fill_subreddit_select();
 		}
 	}
@@ -272,67 +279,66 @@
 		}, 100);
 	}
 
-	function create_new_data_frame() {
-		const data_frame = {
-			saved: {
-				items: {}, // posts, comments
-				item_sub_icon_urls: {}
-			},
-			created: {
-				items: {}, // posts, comments
-				item_sub_icon_urls: {}
-			},
-			upvoted: {
-				items: {}, // posts
-				item_sub_icon_urls: {}
-			},
-			downvoted: {
-				items: {}, // posts
-				item_sub_icon_urls: {}
-			},
-			hidden: {
-				items: {}, // posts
-				item_sub_icon_urls: {}
-			},
-			awarded: {
-				items: {}, // posts, comments
-				item_sub_icon_urls: {}
-			}
-		};
-		return data_frame;
-	}
+	async function get_parse_set_data(active_category) {
+		active_data.items = {};
+		active_data.item_sub_icon_urls = {};
 
-	function store_data(from_data, to_data) {
-		for (const category in from_data) {
-			if (from_data[category].items) {
-				const sorted_items_entries = Object.entries(from_data[category].items).sort((a, b) => b[1].created_epoch - a[1].created_epoch); // sort by created_epoch, descending
+		const ref = firebase_db_instance.ref(active_category);
+		const snapshot = await ref.get();
+		const data = snapshot.val();
+
+		if (!data) {
+			return;
+		} else {
+			if (data.items) {
+				const sorted_items_entries = Object.entries(data.items).sort((a, b) => b[1].created_epoch - a[1].created_epoch); // sort by created_epoch, descending
 				for (const entry of sorted_items_entries) {
 					const item_key = entry[0];
 					const item_value = entry[1];
 			
-					to_data[category].items[item_key] = item_value;
+					active_data.items[item_key] = item_value;
 				}
 			}
 
-			if (from_data[category].item_sub_icon_urls) {
-				const icon_urls_entries = Object.entries(from_data[category].item_sub_icon_urls);
+			if (data.item_sub_icon_urls) {
+				const icon_urls_entries = Object.entries(data.item_sub_icon_urls);
 				for (const entry of icon_urls_entries) {
 					const icon_url_key = entry[0];
 					const icon_url_value = entry[1];
 
-					to_data[category].item_sub_icon_urls[icon_url_key.replace("|", "/")] = icon_url_value;
+					active_data.item_sub_icon_urls[icon_url_key.replace("|", "/")] = icon_url_value;
 				}
-			}
+			}	
 		}
 	}
 
+	function show_skeleton_loading() {
+		item_list.classList.add("d-none");
+		skeleton_list.classList.remove("d-none");
+	}
+
+	function refresh_item_list() {
+		observer.disconnect(); // stops observing all currently observed elements. (does NOT stop the intersection observer. i.e., can still observe new elements)
+		item_list.innerHTML = "";
+		items_currently_listed = 0;
+
+		set_active_item_ids();
+		list_next_items(25);
+	}
+
+	function hide_skeleton_loading() {
+		skeleton_list.classList.add("d-none");
+		item_list.classList.remove("d-none");
+		item_list.scrollTop = 0;
+	}
+
 	function set_active_item_ids() { // filter ➔ set
-		// filter by active_category and active_type
+		// filter by active_type
 		if (active_type == "all") {
-			active_item_ids = Object.keys(data_in_use[active_category].items);
+			active_item_ids = Object.keys(active_data.items);
 		} else if (active_type == "posts" || active_type == "comments") {
 			active_item_ids = [];
-			const items_entries = Object.entries(data_in_use[active_category].items);
+			const items_entries = Object.entries(active_data.items);
 			for (const entry of items_entries) {
 				const item_key = entry[0];
 				const item_value = entry[1];
@@ -345,7 +351,7 @@
 		if (subreddit_select.value != "" && subreddit_select.value != "all") {
 			const filtered_items = {};
 			for (const item_id of active_item_ids) {
-				filtered_items[item_id] = data_in_use[active_category].items[item_id];
+				filtered_items[item_id] = active_data.items[item_id];
 			}
 		
 			active_item_ids = [];
@@ -364,7 +370,7 @@
 
 			const filtered_items = {};
 			for (const item_id of active_item_ids) {
-				filtered_items[item_id] = data_in_use[active_category].items[item_id];
+				filtered_items[item_id] = active_data.items[item_id];
 			}
 		
 			active_item_ids = [];
@@ -399,12 +405,12 @@
 
 		while (items_currently_listed < x && items_currently_listed < max_items) {
 			const item_id = active_item_ids[items_currently_listed];
-			const item = data_in_use[active_category].items[item_id];
+			const item = active_data.items[item_id];
 
 			item_list.insertAdjacentHTML("beforeend", `
 				<div id="${item_id}" class="list-group-item list-group-item-action text-left text-light p-1" data-url="${item.url}" data-type="${item.type}">
-					<a href="https://www.reddit.com/${item.sub}" target="_blank"><img src="${data_in_use[active_category].item_sub_icon_urls[item.sub]}" class="rounded-circle${(data_in_use[active_category].item_sub_icon_urls[item.sub] == "#" ? "" : " border border-light")}"/></a><small><a href="https://www.reddit.com/${item.sub}" target="_blank"><b class="ml-2">${item.sub}</b></a> &bull; <a href="https://www.reddit.com/${item.author}" target="_blank">${item.author}</a> &bull; <i data-url="${item.url}" data-toggle="tooltip" data-placement="top" title="${utils.epoch_to_formatted_datetime(item.created_epoch)}">${utils.time_since(item.created_epoch)}</i></small>
-					<p class="content_wrapper lead line_height_1 noto_sans m-0" data-url="${item.url}">${(item.type == "post" ? "<b>" : "<small>")}${item.content}${(item.type == "post" ? "</b>" : "</small>")}</p>
+					<a href="https://www.reddit.com/${item.sub}" target="_blank"><img src="${active_data.item_sub_icon_urls[item.sub]}" class="rounded-circle${(active_data.item_sub_icon_urls[item.sub] == "#" ? "" : " border border-light")}"/></a><small><a href="https://www.reddit.com/${item.sub}" target="_blank"><b class="ml-2">${item.sub}</b></a> &bull; <a href="https://www.reddit.com/${item.author}" target="_blank">${item.author}</a> &bull; <i data-url="${item.url}" data-toggle="tooltip" data-placement="top" title="${utils.epoch_to_formatted_datetime(item.created_epoch)}">${utils.time_since(item.created_epoch)}</i></small>
+					<p class="content_wrapper lead line_height_1 noto_sans m-0" data-url="${item.url}">${(item.type == "post" ? "<b>" : "<small>")}${item.content.replaceAll("<", "&lt;").replaceAll(">", "&gt;")}${(item.type == "post" ? "</b>" : "</small>")}</p>
 					<button type="button" class="delete_btn btn btn-sm btn-outline-secondary shadow-none border-0 py-0" data-toggle="popover" data-placement="right" data-title="delete item from" data-content='<div class="${item_id}"><div><span class="row_1_popover_btn btn btn-sm btn-primary float-left p-1">eternity</span><span class="row_1_popover_btn btn btn-sm btn-primary float-center p-1">Reddit</span><span class="row_1_popover_btn btn btn-sm btn-primary float-right p-1">both</span></div><div><span class="row_2_popover_btn btn btn-sm btn-secondary float-left mt-2">cancel</span><span class="row_2_popover_btn delete_item_confirm_btn btn btn-sm btn-danger float-right mt-2">confirm</span></div><div class="clearfix"></div></div>' data-html="true">delete</button> <button type="button" class="copy_link_btn btn btn-sm btn-outline-secondary shadow-none border-0 py-0">copy link</button>
 				</div>
 			`);
@@ -423,12 +429,12 @@
 
 		const subs = [];
 		if (active_type == "all") {
-			for (const item in data_in_use[active_category].items) {
-				(!subs.includes(data_in_use[active_category].items[item].sub) ? subs.push(data_in_use[active_category].items[item].sub) : null);
+			for (const item in active_data.items) {
+				(!subs.includes(active_data.items[item].sub) ? subs.push(active_data.items[item].sub) : null);
 			}
 		} else {
-			for (const item in data_in_use[active_category].items) {
-				(data_in_use[active_category].items[item].type == active_type.slice(0, -1) && !subs.includes(data_in_use[active_category].items[item].sub) ? subs.push(data_in_use[active_category].items[item].sub) : null);
+			for (const item in active_data.items) {
+				(active_data.items[item].type == active_type.slice(0, -1) && !subs.includes(active_data.items[item].sub) ? subs.push(active_data.items[item].sub) : null);
 			}
 		}
 		subs.sort();
@@ -441,57 +447,10 @@
 		jQuery(subreddit_select).selectpicker("refresh");
 		jQuery(subreddit_select).selectpicker("render");
 	}
-
-	async function refresh_item_list(first_time=false) {
-		if (!first_time) {
-			const dpr_as_string = JSON.stringify(data_pending_refresh);
-			if (dpr_as_string != JSON.stringify(create_new_data_frame())) {
-				data_in_use = JSON.parse(dpr_as_string);
-				data_pending_refresh = create_new_data_frame();
-			}
-
-			show_skeleton_loading();
-			await new Promise((resolve, reject) => {
-				let item_list_size = item_list.children.length;
-				const interval_id = setInterval(() => {
-					if (item_list.children.length > item_list_size) {
-						item_list_size = item_list.children.length;
-					} else {
-						clearInterval(interval_id);
-						hide_skeleton_loading();
-						resolve();
-					}
-				}, 500);
-			});
-		}
-		
-		set_active_item_ids();
-		list_next_items(25);
-	}
-
-	function show_skeleton_loading() {
-		item_list.classList.add("d-none");
-		skeleton_list.classList.remove("d-none");
-		for (let i = 0; i < 7; i++) {
-			skeleton_list.insertAdjacentHTML("beforeend", `
-				<div class="skeleton_item rounded mb-2"></div>
-			`);
-		}
-	}
-
-	function hide_skeleton_loading() {
-		skeleton_list.classList.add("d-none");
-		skeleton_list.innerHTML = "";
-		observer.disconnect(); // stops observing all currently observed elements. (does NOT stop the intersection observer. i.e., can still observe new elements)
-		item_list.innerHTML = "";
-		item_list.classList.remove("d-none");
-		item_list.scrollTop = 0;
-		items_currently_listed = 0;
-	}
 </script>
 
 <svelte:window on:click={handle_window_click} on:keydown={handle_window_keydown}/>
-<Navbar username={username} show_export_data={true}/>
+<Navbar username={username} show_export_data={true} firebase_auth_instance={firebase_auth_instance} firebase_db_url={firebase_db_url}/>
 <div class="text-center mt-3">
 	<h1 class="display-4">{globals_r.app_name}</h1>
 	<span>last updated: <b bind:this={last_updated_wrapper}>?</b> ago</span>
@@ -531,14 +490,9 @@
 	<div class="card card-body bg-dark border-top-0 mt-n2 pt-0 pb-2 pr-2">
 		<div bind:this={item_list} class="list-group list-group-flush border-0 d-none" id="item_list"></div>
 		<div bind:this={skeleton_list} class="list-group" id="skeleton_list">
-			<!-- TODO use svelte foreach ? -->
-			<div class="skeleton_item rounded mb-2"></div>
-			<div class="skeleton_item rounded mb-2"></div>
-			<div class="skeleton_item rounded mb-2"></div>
-			<div class="skeleton_item rounded mb-2"></div>
-			<div class="skeleton_item rounded mb-2"></div>
-			<div class="skeleton_item rounded mb-2"></div>
-			<div class="skeleton_item rounded mb-2"></div>
+			{#each {length: 7} as _, idx}
+				<div class="skeleton_item rounded mb-2"></div>
+			{/each}
 		</div>
 	</div>
 </div>

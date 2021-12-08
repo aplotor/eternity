@@ -9,11 +9,14 @@
 <script>
 	export let username;
 	export let show_export_data;
+	export let firebase_auth_instance;
+	export let firebase_db_url;
 
 	let [
 		settings_btn,
 		settings_menu,
 		export_anchor,
+		new_tab_json,
 		purge_anchor,
 		purge_warning,
 		purge_input,
@@ -21,8 +24,7 @@
 		purge_confirm_btn,
 		purge_spinner_container,
 		redirect_notice,
-		redirect_countdown_wrapper,
-		dl
+		redirect_countdown_wrapper
 	] = [null];
 	svelte.onMount(() => {
 		if (!username) {
@@ -68,20 +70,16 @@
 			return;
 		}
 
-		export_anchor.addEventListener("click", (evt) => {
+		export_anchor.addEventListener("click", async (evt) => {
 			evt.preventDefault();
 			
-			const blob = new Blob([
-				JSON.stringify(data_in_use, null, 4)
-			], {
-				type: "application/json"
-			});
-			const url = URL.createObjectURL(blob);
-			dl.href = url;
-			const filename = `eternity — u=${username} — ${utils.epoch_to_formatted_datetime(utils.now_epoch()).replaceAll(":", "꞉")}.json`;
-			dl.download = filename;
-			dl.click();
-			URL.revokeObjectURL(url);
+			try {
+				const id_token = await firebase_auth_instance.currentUser.getIdToken();
+				new_tab_json.href = `${firebase_db_url}/.json?print=pretty&auth=${id_token}`;
+				new_tab_json.click();
+			} catch (err) {
+				console.error(err);
+			}
 		});
 	});
 
@@ -170,7 +168,7 @@
 					<div class="dropdown-divider m-0"></div>
 					{#if show_export_data}
 						<a bind:this={export_anchor} href="#">export data</a>
-						<a bind:this={dl} class="d-none" download></a>
+						<a bind:this={new_tab_json} href="#" target="_blank" class="d-none"></a>
 						<div class="dropdown-divider m-0"></div>
 					{/if}
 					<a bind:this={purge_anchor} href="#">purge account</a>
