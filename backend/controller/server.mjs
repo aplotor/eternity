@@ -5,6 +5,7 @@ console.log(`${run_config}: ${backend}`);
 const secrets = (run_config == "dev" ? (await import(`${backend}/.secrets.mjs`)).dev : (await import(`${backend}/.secrets.mjs`)).prod);
 const logger = await import(`${backend}/model/logger.mjs`);
 const sql = await import(`${backend}/model/sql.mjs`);
+const file = await import(`${backend}/model/file.mjs`);
 const firebase = await import(`${backend}/model/firebase.mjs`);
 const cryptr = await import(`${backend}/model/cryptr.mjs`);
 const user = await import(`${backend}/model/user.mjs`);
@@ -42,6 +43,7 @@ const app_socket = socket_io_client.connect("http://localhost:1026", {
 (run_config == "dev" ? logger.clear_logs() : null);
 await sql.init_db();
 sql.cycle_backup_db();
+file.init();
 await user.fill_usernames_to_socket_ids();
 user.cycle_update_all(io);
 process.nextTick(() => {
