@@ -192,7 +192,9 @@
 		<div class="form-group">
 			<p>to use eternity, you will need to go to <a href="https://console.firebase.google.com" target="_blank">Firebase console</a> and</p>
 			<ul class="line_height_1 mt-n2">
-				<li class="mt-3">create a new Firebase project <span class="text-light">named "eternity-{username}" (without the quotes)</span></li>
+				<li class="mt-3">follow <a bind:this={instruction_video_anchor} href="#">this instruction video</a> for a step-by-step guide on how to do the following</li>
+				<li bind:this={instruction_video_wrapper} class="no_bullet embed-responsive embed-responsive-16by9 mt-2 d-none"><iframe title="instruction video" class="embed-responsive-item" src="https://www.youtube.com/embed/zpOULjyy-n8" allowfullscreen></iframe></li> <!-- TODO record vid. name it "create new firebase project, and get key file and web app config" -->
+				<li class="mt-2">create a new Firebase project <span class="text-light">named "eternity-{username}" (without the quotes)</span></li>
 				<li class="mt-2">create a Realtime Database where your Reddit data will be stored (it is free up to 1gb disk storage, which should be enough to last you a very long time)</li>
 				<li class="mt-2">set the Realtime Database read and write security rules to "auth.token.owner == true" (with the quotes)</li>
 				<li class="mt-2">enable Authentication from domain "eternity.j9108c.com"</li>
@@ -208,8 +210,6 @@
 					<button bind:this={validate_btn} class="btn btn-primary shadow-none ml-2">validate</button>
 				</li>
 				<li class="no_bullet mt-2"><div bind:this={validate_alert_wrapper}></div></li>
-				<li class="mt-2">follow <a bind:this={instruction_video_anchor} href="#">this instruction video</a> for a step-by-step guide</li>
-				<li bind:this={instruction_video_wrapper} class="no_bullet embed-responsive embed-responsive-16by9 mt-2 d-none"><iframe title="instruction video" class="embed-responsive-item" src="https://www.youtube.com/embed/zpOULjyy-n8" allowfullscreen></iframe></li> <!-- TODO record vid. name it "create new firebase project, and get key file and web app config" -->
 			</ul>
 			<p class="mt-4">terms and conditions</p>
 			<ul class="line_height_1 mt-n2">
