@@ -308,7 +308,7 @@ io.on("connect", (socket) => {
 		const key_string = await filesystem.promises.readFile(key_path, "utf-8");
 		const key_obj = JSON.parse(key_string);
 
-		const fixed_username = username.toLowerCase().replaceAll("_", "");
+		const fixed_username = username.toLowerCase().split("_").join("");
 
 		if (!(key_obj.type && key_obj.type == "service_account")) {
 			io.to(socket.id).emit("alert", "validate", "validation failed: this is not a Firebase project service account key", "danger");
