@@ -313,6 +313,7 @@
 	}
 
 	function show_skeleton_loading() {
+		item_list.scrollTop = 0;
 		item_list.classList.add("d-none");
 		skeleton_list.classList.remove("d-none");
 	}
@@ -320,6 +321,7 @@
 	function refresh_item_list() {
 		observer.disconnect(); // stops observing all currently observed elements. (does NOT stop the intersection observer. i.e., can still observe new elements)
 		item_list.innerHTML = "";
+		item_list.scrollTop = 0;
 		items_currently_listed = 0;
 
 		set_active_item_ids();
