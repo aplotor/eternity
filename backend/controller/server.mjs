@@ -16,7 +16,6 @@ import * as socket_io_server from "socket.io";
 import * as socket_io_client from "socket.io-client";
 import express from "express";
 import http from "http";
-import cors from "cors";
 import cookie_session from "cookie-session";
 import passport from "passport";
 import passport_reddit from "passport-reddit";
@@ -55,11 +54,6 @@ let countdown_copy = null;
 let domain_request_info_copy = null;
 let dev_private_ip_copy = null;
 const maintenance_active = [false];
-
-if (run_config == "dev") {
-	app.use(cors());
-	app.options("*", cors());
-}
 
 app.use(fileupload({
 	limits: {
@@ -314,15 +308,17 @@ io.on("connect", (socket) => {
 		const key_string = await filesystem.promises.readFile(key_path, "utf-8");
 		const key_obj = JSON.parse(key_string);
 
+		const fixed_username = username.toLowerCase().replaceAll("_", "");
+
 		if (!(key_obj.type && key_obj.type == "service_account")) {
 			io.to(socket.id).emit("alert", "validate", "validation failed: this is not a Firebase project service account key", "danger");
 			await filesystem.promises.unlink(key_path);
 			return;
-		} else if (!(key_obj.project_id && key_obj.project_id.startsWith(`eternity-${username}`))) {
+		} else if (!(key_obj.project_id && key_obj.project_id.startsWith(`eternity-${fixed_username}`))) {
 			io.to(socket.id).emit("alert", "validate", `validation failed: incorrect Firebase project name. you must name the project "eternity-${username}" (without the quotes)`, "danger");
 			await filesystem.promises.unlink(key_path);
 			return;
-		} else if (!(web_app_config.projectId && web_app_config.projectId.startsWith(`eternity-${username}`) && web_app_config.databaseURL.startsWith(`https://eternity-${username}`) && web_app_config.databaseURL.includes("firebase"))) {
+		} else if (!(web_app_config.projectId && web_app_config.projectId.startsWith(`eternity-${fixed_username}`) && web_app_config.databaseURL.startsWith(`https://eternity-${fixed_username}`) && web_app_config.databaseURL.includes("firebase"))) {
 			io.to(socket.id).emit("alert", "validate", "validation failed: incorrect Firebase web app config", "danger");
 			await filesystem.promises.unlink(key_path);
 			return;

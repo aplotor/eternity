@@ -194,7 +194,7 @@
 			<ul class="line_height_1 mt-n2">
 				<li class="mt-3">follow <a bind:this={instruction_video_anchor} href="#">this instruction video</a> for a step-by-step guide on how to do the following</li>
 				<li bind:this={instruction_video_wrapper} class="no_bullet embed-responsive embed-responsive-16by9 mt-2 d-none"><iframe title="instruction video" class="embed-responsive-item" src="https://www.youtube.com/embed/shvTql5MS3o" allowfullscreen></iframe></li>
-				<li class="mt-2">create a new Firebase project <span class="text-light">named <b>eternity-{username}</b></span></li>
+				<li class="mt-2">create a new Firebase project <span class="text-light">named <b>eternity-{username.toLowerCase().replaceAll("_", "")}</b></span></li>
 				<li class="mt-2">create a Realtime Database where your Reddit data will be stored (it is free up to 1gb disk storage, which should be enough to last you a very long time)</li>
 				<li class="mt-2">set the Realtime Database read and write security rules to <b>"auth.token.owner == true"</b></li>
 				<li class="mt-2">enable Authentication from domain <b>eternity.j9108c.com</b></li>
