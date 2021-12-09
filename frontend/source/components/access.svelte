@@ -65,7 +65,7 @@
 				await firebase_auth_instance.signInWithCustomToken(auth_token);
 				firebase_db_instance = firebase.database(firebase_app_instance);
 
-				await get_parse_set_data(active_category);
+				await get_parse_set_data();
 				refresh_item_list();
 				hide_skeleton_loading();
 				fill_subreddit_select();
@@ -236,7 +236,7 @@
 			if (selected_category != active_category) {
 				active_category = selected_category;
 				show_skeleton_loading();
-				await get_parse_set_data(active_category);
+				await get_parse_set_data();
 				refresh_item_list();
 				hide_skeleton_loading();
 				fill_subreddit_select();
@@ -259,7 +259,7 @@
 		if (evt.target.id == "refresh_btn") {
 			new_data_alert_wrapper.classList.add("d-none");
 			show_skeleton_loading();
-			await get_parse_set_data(active_category);
+			await get_parse_set_data();
 			refresh_item_list();
 			hide_skeleton_loading();
 			fill_subreddit_select();
@@ -279,7 +279,7 @@
 		}, 100);
 	}
 
-	async function get_parse_set_data(active_category) {
+	async function get_parse_set_data() {
 		active_data.items = {};
 		active_data.item_sub_icon_urls = {};
 
