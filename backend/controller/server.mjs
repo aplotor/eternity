@@ -308,17 +308,17 @@ io.on("connect", (socket) => {
 		const key_string = await filesystem.promises.readFile(key_path, "utf-8");
 		const key_obj = JSON.parse(key_string);
 
-		const fixed_username = (username.includes("_") ? `-${username.toLowerCase().split("_").join("-")}` : username.toLowerCase());
+		const project_id_base = (username.includes("_") ? `ete-000-${username.toLowerCase().split("_").join("-")}` : `eternity-${username.toLowerCase()}`);
 
 		if (!(key_obj.type && key_obj.type == "service_account")) {
 			io.to(socket.id).emit("alert", "validate", "validation failed: this is not a Firebase project service account key", "danger");
 			await filesystem.promises.unlink(key_path);
 			return;
-		} else if (!(key_obj.project_id && key_obj.project_id.startsWith(`eternity-${fixed_username}`))) {
-			io.to(socket.id).emit("alert", "validate", `validation failed: incorrect Firebase project name. you must name the project "eternity-${username}" (without the quotes)`, "danger");
+		} else if (!(key_obj.project_id && key_obj.project_id.startsWith(project_id_base))) {
+			io.to(socket.id).emit("alert", "validate", `validation failed: incorrect Firebase project name. you must name the project "${project_id_base}" (without the quotes)`, "danger");
 			await filesystem.promises.unlink(key_path);
 			return;
-		} else if (!(web_app_config.projectId && web_app_config.projectId.startsWith(`eternity-${fixed_username}`) && web_app_config.databaseURL.startsWith(`https://eternity-${fixed_username}`) && web_app_config.databaseURL.includes("firebase"))) {
+		} else if (!(web_app_config.projectId && web_app_config.projectId.startsWith(project_id_base) && web_app_config.databaseURL.startsWith(`https://${project_id_base}`) && web_app_config.databaseURL.includes("firebase"))) {
 			io.to(socket.id).emit("alert", "validate", "validation failed: incorrect Firebase web app config", "danger");
 			await filesystem.promises.unlink(key_path);
 			return;
