@@ -1,6 +1,5 @@
 const backend = process.cwd();
 
-import filesystem from "fs";
 import winston from "winston";
 
 const log_logger = create_logger("info");
@@ -33,14 +32,7 @@ function create_logger(level) { // https://github.com/winstonjs/winston#logging-
 	return logger;
 }
 
-function clear_logs() {
-	filesystem.closeSync(filesystem.openSync(`${backend}/logs/log.txt`, "w"));
-	filesystem.closeSync(filesystem.openSync(`${backend}/logs/error.txt`, "w"));
-	console.log("cleared all logs");
-}
-
 export {
 	log,
-	error,
-	clear_logs
+	error
 };

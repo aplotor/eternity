@@ -29,7 +29,7 @@ const server = http.createServer(app);
 const io = new socket_io_server.Server(server, {
 	cors: (run_config == "dev" ? {origin: "*"} : null)
 });
-const app_socket = socket_io_client.connect("http://localhost:1026", {
+const app_socket = socket_io_client.io("http://localhost:1026", {
 	autoConnect: false,
 	reconnect: true,
 	extraHeaders: {
@@ -39,10 +39,9 @@ const app_socket = socket_io_client.connect("http://localhost:1026", {
 	}
 });
 
-(run_config == "dev" ? logger.clear_logs() : null);
+file.init();
 await sql.init_db();
 sql.cycle_backup_db();
-file.init();
 await user.fill_usernames_to_socket_ids();
 user.cycle_update_all(io);
 process.nextTick(() => {
@@ -409,7 +408,7 @@ io.on("connect", (socket) => {
 	});
 
 	socket.on("disconnect", () => {
-		if (username) { // authenticated visitor (i.e., a user) is connected
+		if (username) {
 			user.usernames_to_socket_ids[username] = null; // set to null; not delete, bc username is needed in user.update_all
 			delete user.socket_ids_to_usernames[socket.id];	
 		}
