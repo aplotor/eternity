@@ -195,7 +195,7 @@
 			const item_id = evt.target.parentElement.parentElement.classList[0];
 			const item_category = active_category;
 			const item_type = document.getElementById(item_id).dataset.type;
-			console.log(item_id, item_category, item_type);
+			// console.log(item_id, item_category, item_type);
 
 			if (delete_from == "eternity" || delete_from == "both") {
 				const list_item = document.getElementById(item_id);

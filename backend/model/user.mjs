@@ -246,36 +246,76 @@ class User {
 	}
 	async update_category(category, type) {
 		let listing = null;
-		const options = {
+		let options = {
 			limit: 5,
 			before: this.category_update_info[category][`latest_fn_${type}`] // "before" is actually chronologically after. https://www.reddit.com/dev/api/#listings
-		}
+		};
 
-		if (category == "saved") { // posts, comments
-			listing = await this.me.getSavedContent(options);
-		} else if (category == "created") { // posts, comments
-			if (type == "posts") {
-				listing = await this.me.getSubmissions(options);
-			} else if (type == "comments") {
-				listing = await this.me.getComments(options);
-			}
-		} else if (category == "upvoted") { // posts
-			listing = await this.me.getUpvotedContent(options);
-		} else if (category == "downvoted") { // posts
-			listing = await this.me.getDownvotedContent(options);
-		} else if (category == "hidden") { // posts
-			listing = await this.me.getHiddenContent(options);
-		} else if (category == "awarded") { // posts, comments
-			listing = await this.me._getListing({
-				uri: `u/${this.username}/gilded/given`,
-				qs: options
-			});
+		switch (category) {
+			case "saved": // posts, comments
+				listing = await this.me.getSavedContent(options);
+				break;
+			case "created": // posts, comments
+				if (type == "posts") {
+					listing = await this.me.getSubmissions(options);
+				} else if (type == "comments") {
+					listing = await this.me.getComments(options);
+				}
+				break;
+			case "upvoted": // posts
+				listing = await this.me.getUpvotedContent(options);
+				break;
+			case "downvoted": // posts
+				listing = await this.me.getDownvotedContent(options);
+				break;
+			case "hidden": // posts
+				listing = await this.me.getHiddenContent(options);
+				break;
+			case "awarded": // posts, comments
+				listing = await this.me._getListing({
+					uri: `u/${this.username}/gilded/given`,
+					qs: options
+				});
+				break;
+			default:
+				break;
 		}
 
 		if (listing.isFinished) {
 			console.log(`(${category}) (${type}) listing is finished: ${listing.isFinished}`);
 			
-			if (listing.length != 0) {
+			if (listing.length == 0) { // either listing actually has no items, or user deleted the latest_fn item from the listing on reddit (like, deleted it from reddit ON reddit, not deleted it from reddit on eternity)
+				options = {
+					limit: 1
+				};
+
+				switch (category) {
+					case "saved":
+						listing = await this.me.getSavedContent(options);
+						break;
+					case "created":
+						if (type == "posts") {
+							listing = await this.me.getSubmissions(options);
+						} else if (type == "comments") {
+							listing = await this.me.getComments(options);
+						}
+						break;
+					case "upvoted":
+						listing = await this.me.getUpvotedContent(options);
+						break;
+					case "downvoted":
+						listing = await this.me.getDownvotedContent(options);
+						break;
+					case "hidden":
+						listing = await this.me.getHiddenContent(options);
+						break;
+					default:
+						break;
+				}
+				
+				const latest_fn = (listing.length != 0 ? listing[0].name : null);
+				this.category_update_info[category][`latest_fn_${type}`] = latest_fn;
+			} else {
 				this.parse_listing(listing, category, type);
 				this.category_update_info[category].latest_new_data_epoch = epoch.now();
 			}
@@ -468,10 +508,25 @@ async function delete_item_from_reddit_acc(username, item_id, item_category, ite
 	});
 
 	let item = null;
-	if (item_type == "post") {
-		item = requester.getSubmission(item_id);
-	} else if (item_type == "comment") {
-		item = requester.getComment(item_id);
+	let item_fn = null; // https://www.reddit.com/dev/api/#fullnames
+	switch (item_type) {
+		case "post":
+			item = requester.getSubmission(item_id);
+			item_fn = `t3_${item_id}`;
+			break;
+		case "comment":
+			item = requester.getComment(item_id);
+			item_fn = `t1_${item_id}`;
+			break;
+		default:
+			break;
+	}
+
+	let replace_latest_fn = null;
+	if (item_category == "saved") {
+		replace_latest_fn = (item_fn == user.category_update_info.saved.latest_fn_mixed ? true : false);
+	} else {
+		replace_latest_fn = (item_fn == user.category_update_info[item_category][`latest_fn_${item_type}s`] ? true : false);
 	}
 	
 	switch (item_category) {
@@ -490,6 +545,52 @@ async function delete_item_from_reddit_acc(username, item_id, item_category, ite
 			break;
 		default:
 			break;
+	}
+
+	if (replace_latest_fn) {
+		const me = await requester.getMe();
+
+		let listing = null;
+		const options = {
+			limit: 1
+		};
+
+		switch (item_category) {
+			case "saved":
+				listing = await me.getSavedContent(options);
+				break;
+			case "created":
+				if (item_type == "post") {
+					listing = await me.getSubmissions(options);
+				} else if (item_type == "comment") {
+					listing = await me.getComments(options);
+				}
+				break;
+			case "upvoted":
+				listing = await me.getUpvotedContent(options);
+				break;
+			case "downvoted":
+				listing = await me.getDownvotedContent(options);
+				break;
+			case "hidden":
+				listing = await me.getHiddenContent(options);
+				break;
+			default:
+				break;
+		}
+
+		const latest_fn = (listing.length != 0 ? listing[0].name : null);
+		if (item_category == "saved") {
+			user.category_update_info.saved.latest_fn_mixed = latest_fn;
+		} else {
+			user.category_update_info[item_category][`latest_fn_${item_type}s`] = latest_fn;
+		}
+
+		await sql.query(`
+			update user_ 
+			set category_update_info = '${JSON.stringify(user.category_update_info)}' 
+			where username = '${user.username}';
+		`);
 	}
 }
 
