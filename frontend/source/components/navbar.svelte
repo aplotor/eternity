@@ -90,7 +90,7 @@
 		}
 
 		setTimeout(() => {
-			(settings_menu && !settings_menu.classList.contains("show") ? hide_purge_warning() : null);
+			(!settings_menu.classList.contains("show") ? hide_purge_warning() : null);
 		}, 100);
 	}
 
@@ -101,7 +101,7 @@
 
 		if (evt.key == "Escape") {
 			setTimeout(() => {
-				if (settings_menu && !settings_menu.classList.contains("show")) {
+				if (!settings_menu.classList.contains("show")) {
 					settings_btn.blur();
 					hide_purge_warning();
 				}

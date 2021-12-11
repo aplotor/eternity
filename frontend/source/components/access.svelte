@@ -132,6 +132,8 @@
 		globals_r.socket.off("initialize");
 		globals_r.socket.off("store last updated epoch");
 		globals_r.socket.off("show refresh alert");
+
+		firebase_app_instance.delete().catch((err) => console.error(err));
 	});
 
 	async function handle_window_click(evt) {
