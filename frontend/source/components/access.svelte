@@ -53,7 +53,7 @@
 		skeleton_list,
 		new_data_alert_wrapper
 	] = [null];
-	svelte.onMount(async () => {
+	svelte.onMount(() => {
 		globals_r.socket.emit("page switch", "access");
 
 		globals_r.socket.on("initialize", async (config, auth_token) => {

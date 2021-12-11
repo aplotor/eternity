@@ -307,17 +307,13 @@ io.on("connect", (socket) => {
 		const key_string = await filesystem.promises.readFile(key_path, "utf-8");
 		const key_obj = JSON.parse(key_string);
 
-		const project_id_base = (username.includes("_") ? `ete-111-${username.toLowerCase().split("_").join("-")}-1` : `ete-000-${username.toLowerCase()}-0`);
-
-		if (!(key_obj.type && key_obj.type == "service_account")) {
-			io.to(socket.id).emit("alert", "validate", "validation failed: this is not a Firebase project service account key", "danger");
+		if (!(key_obj.type && key_obj.type == "service_account") && key_obj.project_id && key_obj.private_key_id && key_obj.private_key && key_obj.client_email && key_obj.client_id && key_obj.auth_uri && key_obj.token_uri && key_obj.auth_provider_x509_cert_url && key_obj.client_x509_cert_url) {
+			io.to(socket.id).emit("alert", "validate", "validation failed: incorrect Firebase project service account key", "danger");
 			await filesystem.promises.unlink(key_path);
 			return;
-		} else if (!(key_obj.project_id && key_obj.project_id.startsWith(project_id_base))) {
-			io.to(socket.id).emit("alert", "validate", `validation failed: incorrect Firebase project name. you must name the project "${project_id_base}" (without the quotes)`, "danger");
-			await filesystem.promises.unlink(key_path);
-			return;
-		} else if (!(web_app_config.projectId && web_app_config.projectId.startsWith(project_id_base) && web_app_config.databaseURL.startsWith(`https://${project_id_base}`) && web_app_config.databaseURL.includes("firebase"))) {
+		}
+		
+		if (!(web_app_config.databaseURL && web_app_config.databaseURL.includes("firebase") && web_app_config.apiKey && web_app_config.authDomain && web_app_config.projectId && web_app_config.storageBucket && web_app_config.messagingSenderId && web_app_config.appId)) {
 			io.to(socket.id).emit("alert", "validate", "validation failed: incorrect Firebase web app config", "danger");
 			await filesystem.promises.unlink(key_path);
 			return;

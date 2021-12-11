@@ -23,6 +23,7 @@
 		email_input,
 		verify_btn,
 		verify_alert_wrapper,
+		agree_and_continue_btn_wrapper,
 		agree_and_continue_btn
 	] = [null];
 	svelte.onMount(() => {
@@ -161,6 +162,14 @@
 			globals_r.socket.emit("verify email", email);
 		});
 
+		agree_and_continue_btn_wrapper.addEventListener("mouseenter", (evt) => {
+			(agree_and_continue_btn.disabled ? jQuery('[data-toggle="tooltip"]').tooltip("show") : null);
+		});
+
+		agree_and_continue_btn_wrapper.addEventListener("mouseleave", (evt) => {
+			(agree_and_continue_btn.disabled ? jQuery('[data-toggle="tooltip"]').tooltip("hide") : null);
+		});
+
 		agree_and_continue_btn.addEventListener("click", (evt) => {
 			evt.target.innerHTML = '<div class="d-flex justify-content-center pt-2"><div class="dot-carousel mr-4"></div><span class="mt-n2">saving</span><div class="dot-carousel ml-4"></div></div>';
 
@@ -194,7 +203,7 @@
 			<ul class="line_height_1 mt-n2">
 				<li class="mt-3">follow <a bind:this={instruction_video_anchor} href="#">this instruction video</a> for a step-by-step guide on how to do the following</li>
 				<li bind:this={instruction_video_wrapper} class="no_bullet embed-responsive embed-responsive-16by9 mt-2 d-none"><iframe title="instruction video" class="embed-responsive-item" src="https://www.youtube.com/embed/shvTql5MS3o" allowfullscreen></iframe></li>
-				<li class="mt-2">create a new Firebase project <span class="text-light">named <b>{(username.includes("_") ? `ete-111-${username.toLowerCase().split("_").join("-")}-1` : `ete-000-${username.toLowerCase()}-0`)}</b></span></li>
+				<li class="mt-2">create a new Firebase project <span class="text-light">named <b>{`eternity-${username.split("_").join("-")}`}</b></span></li>
 				<li class="mt-2">create a Realtime Database where your Reddit data will be stored (it is free up to 1gb disk storage, which should be enough to last you a very long time)</li>
 				<li class="mt-2">set the Realtime Database read and write security rules to <b>"auth.token.owner == true"</b></li>
 				<li class="mt-2">enable Authentication from domain <b>eternity.j9108c.com</b></li>
@@ -211,21 +220,26 @@
 				</li>
 				<li class="no_bullet mt-2"><div bind:this={validate_alert_wrapper}></div></li>
 			</ul>
-			<p class="mt-4">terms and conditions</p>
+			<p class="mt-4">terms of service</p>
 			<ul class="line_height_1 mt-n2">
 				<li class="mt-3">this app is released under the <a target="_blank" href="https://choosealicense.com/licenses/agpl-3.0">AGPL3 License</a></li>
 				<li class="mt-2">you must log in to eternity at least once every 6 months or else your eternity account will be marked inactive and new Reddit data will not continue to sync to your database</li>
 				<li class="mt-2">do not edit any of the Firebase project settings or database contents directly from Firebase. if you do and your eternity instance stops working, you may have to restart</li>
-				<li class="mt-2">if by any chance you exceed the Firebase free tier disk storage, you will need to upgrade your Firebase plan in order for eternity to continue storing your new Reddit data. or, you can choose to export out the existing data and wipe the database to continue for free</li>
-				<!-- <li class="mt-2">any notifications and updates regarding your eternity account (e.g., your account becomes inactive, you reach the storage limit) will be sent from <a href="mailto:eternity@j9108c.com">eternity@j9108c.com</a> to your email</li> -->
-				<li class="mt-2">any notifications and updates regarding your eternity account (e.g., your account becomes inactive, you reach the storage limit) will be sent to your email</li>
+				<li class="mt-2">if by any chance your database exceeds the Firebase free tier disk storage, you will need to upgrade your Firebase plan in order for eternity to continue storing your new Reddit data. or, you can choose to export out the existing data and wipe the database to continue for free</li>
+			</ul>
+			<p class="mt-4">privacy policy</p>
+			<ul class="line_height_1 mt-n2">
+				<li class="mt-3">eternity uses your Reddit authorization to continuously retrieve your new Reddit data, and stores it in your database using the Firebase info you provided</li>
+				<li class="mt-2">your Reddit data is stored solely in your own database, and your database is used solely for your own data</li>
+				<!-- <li class="mt-2">any notifications and updates regarding your eternity account (e.g., your account becomes inactive, your database reaches its storage limit) will be sent from <a href="mailto:eternity@j9108c.com">eternity@j9108c.com</a> to your email</li> -->
+				<li class="mt-2">any notifications and updates regarding your eternity account (e.g., your account becomes inactive, your database reaches its storage limit) will be sent to your email</li>
 				<li class="no_bullet d-flex mt-2">
 					<input bind:this={email_input} type="text" class="form-control bg-light" placeholder="your email address"/>
 					<button bind:this={verify_btn} class="btn btn-primary shadow-none ml-2">verify</button>
 				</li>
 				<li class="no_bullet mt-2"><div bind:this={verify_alert_wrapper}></div></li>
 			</ul>
-			<div data-toggle="tooltip" data-placement="top" title="complete the required steps above first">
+			<div bind:this={agree_and_continue_btn_wrapper} data-toggle="tooltip" data-trigger="manual" data-placement="top" title="complete the required steps above first">
 				<button bind:this={agree_and_continue_btn} class="btn btn-primary shadow-none w-100 mt-3" disabled>agree and continue</button>
 			</div>
 		</div>

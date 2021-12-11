@@ -49,7 +49,9 @@
 	<div class="row d-flex justify-content-center">
 		<content class="col-12 col-sm-11 col-md-10 col-lg-9 col-xl-8">
 			<slot></slot>
-			<div id="pre_gh_space" class="pb-2"></div>
+			<div class="text-center">
+				<a class="font_size_10 m-0" href="/terms_and_privacy">terms and privacy</a>
+			</div>
 			<div class="text-center my-4">
 				<a href={globals_r.repo} target="_blank"><i id="bottom_gh" class="fab fa-github"></i></a>
 			</div>

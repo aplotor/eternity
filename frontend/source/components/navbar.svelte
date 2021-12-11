@@ -11,6 +11,7 @@
 	export let show_export_data;
 	export let firebase_auth_instance;
 	export let firebase_db_url;
+	export let show_return_to_app;
 
 	let [
 		settings_btn,
@@ -89,7 +90,7 @@
 		}
 
 		setTimeout(() => {
-			(!settings_menu.classList.contains("show") ? hide_purge_warning() : null);
+			(settings_menu && !settings_menu.classList.contains("show") ? hide_purge_warning() : null);
 		}, 100);
 	}
 
@@ -100,7 +101,7 @@
 
 		if (evt.key == "Escape") {
 			setTimeout(() => {
-				if (!settings_menu.classList.contains("show")) {
+				if (settings_menu && !settings_menu.classList.contains("show")) {
 					settings_btn.blur();
 					hide_purge_warning();
 				}
@@ -194,6 +195,10 @@
 					</div>
 				</div>
 			</div>
+		</span>
+	{:else if show_return_to_app}
+		<span class="float-right">
+			<a href="/">return to app</a>
 		</span>
 	{/if}
 </nav>
