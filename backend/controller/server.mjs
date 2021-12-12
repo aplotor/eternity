@@ -405,7 +405,7 @@ io.on("connect", (socket) => {
 
 	socket.on("disconnect", () => {
 		if (username) {
-			user.usernames_to_socket_ids[username] = null; // set to null; not delete, bc username is needed in user.update_all
+			(Object.keys(user.usernames_to_socket_ids).includes(username) ? user.usernames_to_socket_ids[username] = null : null); // set to null; not delete, bc username is needed in user.update_all
 			delete user.socket_ids_to_usernames[socket.id];	
 		}
 	});
