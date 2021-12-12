@@ -25,7 +25,8 @@
 			</ul>
 			<p class="mt-4">privacy policy</p>
 			<ul class="line_height_1 mt-n2">
-				<li class="mt-3">eternity uses your Reddit authorization to continuously retrieve your new Reddit data, and stores it in your database using the Firebase info you provided</li>
+				<li class="mt-3">login is handled directly by Reddit (<a href="https://github.com/reddit-archive/reddit/wiki/OAuth2">oauth2</a>). your password is NEVER sent to eternity</li>
+				<li class="mt-2">eternity uses your Reddit authorization to continuously retrieve your new Reddit data, and stores it in your database using the Firebase info you provided</li>
 				<li class="mt-2">your Reddit data is stored solely in your own database, and your database is used solely for your own data</li>
 				<!-- <li class="mt-2">any notifications and updates regarding your eternity account (e.g., your account becomes inactive, your database reaches its storage limit) will be sent from <a href="mailto:eternity@j9108c.com">eternity@j9108c.com</a> to your email</li> -->
 				<li class="mt-2">any notifications and updates regarding your eternity account (e.g., your account becomes inactive, your database reaches its storage limit) will be sent to your email</li>

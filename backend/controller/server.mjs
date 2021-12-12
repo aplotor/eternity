@@ -199,7 +199,7 @@ app.get("/email_verification", (req, res) => {
 });
 
 app.post("/upload", (req, res) => {
-	if (req.isAuthenticated() && req.query.username == req.user.username) {
+	if (req.isAuthenticated()) {
 		req.files.file.mv(`${backend}/tempfiles/${req.user.username}_firebase_service_acc_key.json`, (err) => (err ? console.error(err) : null));
 		res.end();
 	} else {
@@ -217,7 +217,7 @@ app.get("/logout", (req, res) => {
 });
 
 app.get("/purge", async (req, res) => {
-	if (req.isAuthenticated() && req.query.username == req.user.username) {
+	if (req.isAuthenticated() && req.query.socket_id == user.usernames_to_socket_ids[req.user.username]) {
 		try {
 			await req.user.purge();
 			req.logout();

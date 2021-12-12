@@ -19,6 +19,10 @@
 		<p class="lead text-left">bypass Reddit's 1000-item listing limits by externally storing your Reddit items (saved, created, upvoted, downvoted, hidden) in your own database. new items are automatically synced so you'll never lose your Reddit data again</p>
 		<p class="lead text-left">additional functionality: search for items, filter by subreddit, bulk export data</p>
 		<hr class="bg-secondary my-4"/>
+		<div class="embed-responsive embed-responsive-16by9">
+			<iframe title="usage video" class="embed-responsive-item" src="https://www.youtube.com/embed/Ts7fO9wCuI0" allowfullscreen></iframe>
+		</div>
+		<hr class="bg-secondary my-4"/>
 		<p class="lead text-left">required <a href="https://www.reddit.com/dev/api/oauth" target="_blank">Reddit api oauth2 scopes</a>::</p>
 		<ul class="text-left mt-n3">
 			<li><a href="https://www.reddit.com/dev/api/oauth#scope_identity" target="_blank">identity</a>: to get your username</li>
@@ -33,6 +37,8 @@
 			<div class="col-1 col-sm-3"></div>
 			<div class="col-10 col-sm-6">
 				<a id="login_anchor" class="d-flex justify-content-center" href="{globals_r.backend}/login" rel="external"><p class="rounded-pill lead text-white mt-2" id="login_btn">log in with <img id="reddit_logo" class="ml-n2 mr-n2 mb-1" src="/reddit logo on dark.svg" alt="reddit logo"/></p></a>
+				<p class="font_size_10 mt-n2">login handled directly by Reddit (<a href="https://github.com/reddit-archive/reddit/wiki/OAuth2">oauth2</a>)</p>
+				<p class="font_size_10 mt-n3">your password is NEVER sent to eternity</p>
 			</div>
 			<div class="col-1 col-sm-3"></div>
 		</div>

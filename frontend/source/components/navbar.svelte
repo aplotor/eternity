@@ -124,7 +124,7 @@
 		purge_spinner_container.classList.toggle("d-none");
 
 		try {
-			const response = await fetch(`${globals_r.backend}/purge?username=${username}`, {
+			const response = await fetch(`${globals_r.backend}/purge?&socket_id=${globals_r.socket.id}`, {
 				method: "get"
 			});
 			const response_data = await response.text();
