@@ -15,7 +15,9 @@ const readonly = {
 };
 
 const writable = svelte_store.writable({ // global state
-	
+	firebase_app: null,
+	firebase_auth: null,
+	firebase_db: null
 });
 
 export {

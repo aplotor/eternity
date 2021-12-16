@@ -33,11 +33,10 @@
 </script>
 
 <Navbar username={username}/>
-<div class="text-center mt-3">
+<div class="text-center mt-3 mb-4">
 	<h1 class="display-4">{globals_r.app_name}</h1>
 	<div id="loading_container" class="mt-1">
 		<div class="spinner-border" role="status"><span class="sr-only">loading...</span></div>
 		<p class="mt-n5"><span bind:this={progress_wrapper} class="lead">?</span>%</p>
-		<p class="mt-4 mb-0">retrieving your Reddit data for the first time. this may take a minute...</p>
 	</div>
 </div>

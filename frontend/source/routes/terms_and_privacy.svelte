@@ -6,6 +6,11 @@
 
 	const globals_r = globals.readonly;
 </script>
+<script>
+	svelte.onMount(() => {
+		globals_r.socket.emit("navigation", "terms_and_privacy");
+	});
+</script>
 
 <svelte:head>
 	<title>{globals_r.app_name} — terms and privacy</title>

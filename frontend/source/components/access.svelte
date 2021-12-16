@@ -4,17 +4,12 @@
 	import Navbar from "frontend/source/components/navbar.svelte";
 
 	import * as svelte from "svelte";
-	import firebase from "firebase";
 
 	const globals_r = globals.readonly;
+	const globals_w = globals.writable;
 </script>
 <script>
 	export let username;
-
-	let firebase_app_instance = null;
-	let firebase_auth_instance = null;
-	let firebase_db_instance = null;
-	let firebase_db_url = null;
 
 	let last_updated_epoch = null;
 	
@@ -53,26 +48,8 @@
 		skeleton_list,
 		new_data_alert_wrapper
 	] = [null];
-	svelte.onMount(() => {
+	svelte.onMount(async () => {
 		globals_r.socket.emit("page switch", "access");
-
-		globals_r.socket.on("initialize", async (config, auth_token) => {
-			firebase_db_url = config.databaseURL;
-
-			try {
-				firebase_app_instance = firebase.initializeApp(config);
-				firebase_auth_instance = firebase.auth(firebase_app_instance);
-				await firebase_auth_instance.signInWithCustomToken(auth_token);
-				firebase_db_instance = firebase.database(firebase_app_instance);
-
-				await get_parse_set_data();
-				refresh_item_list();
-				hide_skeleton_loading();
-				fill_subreddit_select();
-			} catch (err) {
-				console.error(err);
-			}
-		});
 		
 		globals_r.socket.on("store last updated epoch", (epoch) => {
 			last_updated_epoch = epoch;
@@ -87,6 +64,24 @@
 				}
 			}
 		});
+
+		try {
+			await new Promise((resolve, reject) => {
+				const interval_id = setInterval(() => {
+					if ($globals_w.firebase_app && $globals_w.firebase_auth && $globals_w.firebase_db) {
+						clearInterval(interval_id);
+						resolve();
+					}
+				}, 100);
+			});
+
+			await get_parse_set_data();
+			refresh_item_list();
+			hide_skeleton_loading();
+			fill_subreddit_select();
+		} catch (err) {
+			console.error(err);
+		}
 		
 		setInterval(() => {
 			(last_updated_epoch ? last_updated_wrapper.innerHTML = utils.time_since(last_updated_epoch) : null);
@@ -129,11 +124,8 @@
 		
 	});
 	svelte.onDestroy(() => {
-		globals_r.socket.off("initialize");
 		globals_r.socket.off("store last updated epoch");
 		globals_r.socket.off("show refresh alert");
-
-		firebase_app_instance.delete().catch((err) => console.error(err));
 	});
 
 	async function handle_window_click(evt) {
@@ -208,7 +200,7 @@
 				list_item.classList.add("skeleton_item", "rounded", "mb-2");
 
 				try {
-					const ref = firebase_db_instance.ref(`${item_category}/items/${item_id}`);
+					const ref = $globals_w.firebase_db.ref(`${item_category}/items/${item_id}`);
 					await ref.remove();
 	
 					list_item.remove();
@@ -293,7 +285,7 @@
 		active_data.items = {};
 		active_data.item_sub_icon_urls = {};
 
-		const ref = firebase_db_instance.ref(active_category);
+		const ref = $globals_w.firebase_db.ref(active_category);
 		const snapshot = await ref.get();
 		const data = snapshot.val();
 
@@ -316,7 +308,7 @@
 					const icon_url_key = entry[0];
 					const icon_url_value = entry[1];
 
-					active_data.item_sub_icon_urls[icon_url_key.replace("|", "/")] = icon_url_value;
+					active_data.item_sub_icon_urls[icon_url_key.replace("|", "/").replace(",", ".")] = icon_url_value;
 				}
 			}	
 		}
@@ -462,7 +454,7 @@
 </script>
 
 <svelte:window on:click={handle_window_click} on:keydown={handle_window_keydown}/>
-<Navbar username={username} show_export_data={true} firebase_auth_instance={firebase_auth_instance} firebase_db_url={firebase_db_url}/>
+<Navbar username={username} show_data_anchors={true}/>
 <div class="text-center mt-3">
 	<h1 class="display-4">{globals_r.app_name}</h1>
 	<span>last updated: <b bind:this={last_updated_wrapper}>?</b> ago</span>

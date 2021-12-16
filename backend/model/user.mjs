@@ -22,7 +22,7 @@ class User {
 			null;
 		} else {
 			this.reddit_api_refresh_token_encrypted = cryptr.encrypt(refresh_token);
-			this.category_update_info = {
+			this.category_sync_info = {
 				saved: {
 					latest_fn_mixed: null,
 					latest_new_data_epoch: null
@@ -80,7 +80,7 @@ class User {
 				values (
 					'${this.username}', 
 					'${this.reddit_api_refresh_token_encrypted}', 
-					'${JSON.stringify(this.category_update_info)}', 
+					'${JSON.stringify(this.category_sync_info)}', 
 					null, 
 					${this.last_active_epoch}, 
 					null, 
@@ -91,7 +91,7 @@ class User {
 				on conflict (username) do update -- previously purged user
 				set 
 					reddit_api_refresh_token_encrypted = '${this.reddit_api_refresh_token_encrypted}', 
-					category_update_info = '${JSON.stringify(this.category_update_info)}', 
+					category_sync_info = '${JSON.stringify(this.category_sync_info)}', 
 					last_updated_epoch = null, 
 					last_active_epoch = ${this.last_active_epoch}, 
 					email_encrypted = null, 
@@ -125,6 +125,9 @@ class User {
 		});
 		this.me = await this.requester.getMe();
 
+		this.firebase_app = firebase.create_app(JSON.parse(cryptr.decrypt(this.firebase_service_acc_key_encrypted)), JSON.parse(cryptr.decrypt(this.firebase_web_app_config_encrypted)).databaseURL, this.username);
+		this.firebase_db = firebase.get_db(this.firebase_app);
+
 		this.new_data = {
 			saved: {
 				items: {},
@@ -152,6 +155,14 @@ class User {
 			}
 		};
 
+		this.imported_fns_to_delete = {
+			saved: null,
+			created: null,
+			upvoted: null,
+			downvoted: null,
+			hidden: null
+		};
+
 		this.currently_requesting_icon_sets = {
 			saved: new Set(),
 			created: new Set(),
@@ -162,57 +173,84 @@ class User {
 		};
 
 		const s_promise = new Promise(async (resolve, reject) => {
-			await this.update_category("saved", "mixed");
-			await this.get_new_item_icon_urls("saved");
-			(io ? io.to(socket_id).emit("update progress", ++progress, complete) : null);
-			resolve();
+			try {
+				await this.sync_category("saved", "mixed");
+				await this.import_category("saved", "mixed");
+				await this.get_new_item_icon_urls("saved");
+				(io ? io.to(socket_id).emit("update progress", ++progress, complete) : null);
+				resolve();
+			} catch (err) {
+				reject(err);
+			}
 		});
 
 		const c_promise = new Promise(async (resolve, reject) => {
-			await Promise.all([
-				this.update_category("created", "posts"),
-				this.update_category("created", "comments")
-			]);
-			await this.get_new_item_icon_urls("created");
-			(io ? io.to(socket_id).emit("update progress", ++progress, complete) : null);
-			resolve();
+			try {
+				await Promise.all([
+					this.sync_category("created", "posts"),
+					this.sync_category("created", "comments")
+				]);
+				await this.import_category("created", "mixed");
+				await this.get_new_item_icon_urls("created");
+				(io ? io.to(socket_id).emit("update progress", ++progress, complete) : null);
+				resolve();
+			} catch (err) {
+				reject(err);
+			}
 		});
 		
 		const u_promise = new Promise(async (resolve, reject) => {
-			await this.update_category("upvoted", "posts");
-			await this.get_new_item_icon_urls("upvoted");
-			(io ? io.to(socket_id).emit("update progress", ++progress, complete) : null);
-			resolve();
+			try {
+				await this.sync_category("upvoted", "posts");
+				await this.import_category("upvoted", "posts");
+				await this.get_new_item_icon_urls("upvoted");
+				(io ? io.to(socket_id).emit("update progress", ++progress, complete) : null);
+				resolve();
+			} catch (err) {
+				reject(err);
+			}
 		});
 		
 		const d_promise = new Promise(async (resolve, reject) => {
-			await this.update_category("downvoted", "posts");
-			await this.get_new_item_icon_urls("downvoted");
-			(io ? io.to(socket_id).emit("update progress", ++progress, complete) : null);
-			resolve();
+			try {
+				await this.sync_category("downvoted", "posts");
+				await this.import_category("downvoted", "posts");
+				await this.get_new_item_icon_urls("downvoted");
+				(io ? io.to(socket_id).emit("update progress", ++progress, complete) : null);
+				resolve();
+			} catch (err) {
+				reject(err);
+			}
 		});
 
 		const h_promise = new Promise(async (resolve, reject) => {
-			await this.update_category("hidden", "posts");
-			await this.get_new_item_icon_urls("hidden");
-			(io ? io.to(socket_id).emit("update progress", ++progress, complete) : null);
-			resolve();
+			try {
+				await this.sync_category("hidden", "posts");
+				await this.import_category("hidden", "posts");
+				await this.get_new_item_icon_urls("hidden");
+				(io ? io.to(socket_id).emit("update progress", ++progress, complete) : null);
+				resolve();
+			} catch (err) {
+				reject(err);
+			}
 		});
 
 		const a_promise = new Promise(async (resolve, reject) => {
-			await this.update_category("awarded", "mixed");
-			await this.get_new_item_icon_urls("awarded");
-			(io ? io.to(socket_id).emit("update progress", ++progress, complete) : null);
-			resolve();
+			try {
+				await this.sync_category("awarded", "mixed");
+				await this.get_new_item_icon_urls("awarded");
+				(io ? io.to(socket_id).emit("update progress", ++progress, complete) : null);
+				resolve();
+			} catch (err) {
+				reject(err);
+			}
 		});
 
 		await Promise.all([s_promise, c_promise, u_promise, d_promise, h_promise, a_promise]);
 
 		try {
-			const app = firebase.create_app(JSON.parse(cryptr.decrypt(this.firebase_service_acc_key_encrypted)), JSON.parse(cryptr.decrypt(this.firebase_web_app_config_encrypted)).databaseURL, this.username);
-			const db = firebase.get_db(app);
-			await firebase.insert_data(db, this.new_data);
-			firebase.free_app(app).catch((err) => console.error(err));
+			await firebase.insert_data(this.firebase_db, this.new_data);
+			await firebase.delete_imported_fns(this.firebase_db, this.imported_fns_to_delete);
 			(io ? io.to(socket_id).emit("update progress", ++progress, complete) : null);
 		} catch (err) {
 			console.error(err);
@@ -227,14 +265,15 @@ class User {
 					where username = '${this.username}';
 				`).catch((err) => console.error(err));
 			}
-			
+
+			firebase.free_app(this.firebase_app).catch((err) => console.error(err));
 			return;
 		}
 
 		await sql.query(`
 			update user_ 
 			set 
-				category_update_info = '${JSON.stringify(this.category_update_info)}', 
+				category_sync_info = '${JSON.stringify(this.category_sync_info)}', 
 				last_updated_epoch = ${this.last_updated_epoch = epoch.now()} 
 			where username = '${this.username}';
 		`);
@@ -243,12 +282,13 @@ class User {
 
 		delete this.new_data;
 		delete this.currently_requesting_icon_sets;
+		firebase.free_app(this.firebase_app).catch((err) => console.error(err));
 	}
-	async update_category(category, type) {
+	async sync_category(category, type) {
 		let listing = null;
 		let options = {
 			limit: 5,
-			before: this.category_update_info[category][`latest_fn_${type}`] // "before" is actually chronologically after. https://www.reddit.com/dev/api/#listings
+			before: this.category_sync_info[category][`latest_fn_${type}`] // "before" is actually chronologically after. https://www.reddit.com/dev/api/#listings
 		};
 
 		switch (category) {
@@ -282,7 +322,7 @@ class User {
 		}
 
 		if (listing.isFinished) {
-			console.log(`(${category}) (${type}) listing is finished: ${listing.isFinished}`);
+			// console.log(`(${category}) (${type}) listing is finished: ${listing.isFinished}`);
 			
 			if (listing.length == 0) { // either listing actually has no items, or user deleted the latest_fn item from the listing on reddit (like, deleted it from reddit ON reddit, not deleted it from reddit on eternity)
 				options = {
@@ -314,24 +354,51 @@ class User {
 				}
 				
 				const latest_fn = (listing.length != 0 ? listing[0].name : null);
-				this.category_update_info[category][`latest_fn_${type}`] = latest_fn;
+				this.category_sync_info[category][`latest_fn_${type}`] = latest_fn;
 			} else {
 				this.parse_listing(listing, category, type);
-				this.category_update_info[category].latest_new_data_epoch = epoch.now();
+				this.category_sync_info[category].latest_new_data_epoch = epoch.now();
 			}
 		} else {
 			const extended_listing = await listing.fetchAll({
 				append: true
 			});
-			console.log(`(${category}) (${type}) extended listing is finished: ${extended_listing.isFinished}`);
+			// console.log(`(${category}) (${type}) extended listing is finished: ${extended_listing.isFinished}`);
 
 			this.parse_listing(extended_listing, category, type);
-			this.category_update_info[category].latest_new_data_epoch = epoch.now();
+			this.category_sync_info[category].latest_new_data_epoch = epoch.now();
 		}
 	}
-	parse_listing(listing, category, type, from_mixed=false) {
+	async import_category(category, type) {
+		const ref = this.firebase_db.ref(`${category}/item_fns_to_import`).limitToFirst(500);
+		const snapshot = await ref.get();
+		const data = snapshot.val(); // null if no item_fns_to_import
+
+		let fns = null;
+		if (!data) {
+			return;
+		} else {
+			fns = Object.keys(data);
+			console.log(`importing (${fns.length}) (${category}) items`);
+		}
+
+		const promises = [];
+
+		const required_num_requests = Math.ceil(fns.length / 100);
+		for (let i = 0; i < required_num_requests; i++) {
+			promises.push(this.requester.getContentByIds(fns.slice(i*100, i*100 + 100))); // getContentByIds only takes max of 100 fns at once
+		}
+
+		const listings = await Promise.all(promises);
+		for (const listing of listings) {
+			this.parse_listing(listing, category, type, false, true);
+		}
+
+		this.imported_fns_to_delete[category] = fns;
+	}
+	parse_listing(listing, category, type, from_mixed=false, from_import=false) {
 		if (type == "mixed") {
-			this.category_update_info[category].latest_fn_mixed = listing[0].name;
+			(!from_import ? this.category_sync_info[category].latest_fn_mixed = listing[0].name : null);
 
 			const posts = [];
 			const comments = [];
@@ -347,7 +414,7 @@ class User {
 			this.parse_listing(posts, category, "posts", true);
 			this.parse_listing(comments, category, "comments", true);
 		} else {
-			(!from_mixed ? this.category_update_info[category][`latest_fn_${type}`] = listing[0].name : null);
+			(!from_mixed && !from_import ? this.category_sync_info[category][`latest_fn_${type}`] = listing[0].name : null);
 
 			for (const item of listing) {
 				this.new_data[category].items[item.id] = {
@@ -392,7 +459,7 @@ class User {
 				promises.push(this.requester.oauthRequest({
 					uri: "api/info", // only takes max of 100 subs at once
 					qs: {
-						sr_name: subs.slice(i*100, i*100+100).join(",")
+						sr_name: subs.slice(i*100, i*100 + 100).join(",")
 					}
 				}));
 			}
@@ -447,12 +514,106 @@ class User {
 			}
 		}
 	}
+	async delete_item_from_reddit_acc(item_id, item_category, item_type) {
+		const requester = new snoowrap({
+			userAgent: secrets.reddit_app_user_agent,
+			clientId: secrets.reddit_app_id,
+			clientSecret: secrets.reddit_app_secret,
+			refreshToken: cryptr.decrypt(this.reddit_api_refresh_token_encrypted)
+		});
+	
+		let item = null;
+		let item_fn = null; // https://www.reddit.com/dev/api/#fullnames
+		switch (item_type) {
+			case "post":
+				item = requester.getSubmission(item_id);
+				item_fn = `t3_${item_id}`;
+				break;
+			case "comment":
+				item = requester.getComment(item_id);
+				item_fn = `t1_${item_id}`;
+				break;
+			default:
+				break;
+		}
+	
+		let replace_latest_fn = null;
+		if (item_category == "saved") {
+			replace_latest_fn = (item_fn == this.category_sync_info.saved.latest_fn_mixed ? true : false);
+		} else {
+			replace_latest_fn = (item_fn == this.category_sync_info[item_category][`latest_fn_${item_type}s`] ? true : false);
+		}
+		
+		switch (item_category) {
+			case "saved":
+				await item.unsave();
+				break;
+			case "created":
+				await item.delete();
+				break;
+			case "upvoted":
+			case "downvoted":
+				await item.unvote();
+				break;
+			case "hidden":
+				await item.unhide();
+				break;
+			default:
+				break;
+		}
+	
+		if (replace_latest_fn) {
+			const me = await requester.getMe();
+	
+			let listing = null;
+			const options = {
+				limit: 1
+			};
+	
+			switch (item_category) {
+				case "saved":
+					listing = await me.getSavedContent(options);
+					break;
+				case "created":
+					if (item_type == "post") {
+						listing = await me.getSubmissions(options);
+					} else if (item_type == "comment") {
+						listing = await me.getComments(options);
+					}
+					break;
+				case "upvoted":
+					listing = await me.getUpvotedContent(options);
+					break;
+				case "downvoted":
+					listing = await me.getDownvotedContent(options);
+					break;
+				case "hidden":
+					listing = await me.getHiddenContent(options);
+					break;
+				default:
+					break;
+			}
+	
+			const latest_fn = (listing.length != 0 ? listing[0].name : null);
+			if (item_category == "saved") {
+				this.category_sync_info.saved.latest_fn_mixed = latest_fn;
+			} else {
+				this.category_sync_info[item_category][`latest_fn_${item_type}s`] = latest_fn;
+			}
+	
+			await sql.query(`
+				update user_ 
+				set category_sync_info = '${JSON.stringify(this.category_sync_info)}' 
+				where username = '${this.username}';
+			`);
+		}
+	}
 	async purge() {
 		await sql.query(`
 			update user_ 
 			set 
 				reddit_api_refresh_token_encrypted = null, 
-				category_update_info = null, 
+				category_sync_info = null, 
 				last_updated_epoch = null, 
 				last_active_epoch = null, 
 				email_encrypted = null, 
@@ -497,103 +658,6 @@ async function get(username, existence_check=false) {
 	}
 }
 
-async function delete_item_from_reddit_acc(username, item_id, item_category, item_type) {
-	const user = await get(username);
-
-	const requester = new snoowrap({
-		userAgent: secrets.reddit_app_user_agent,
-		clientId: secrets.reddit_app_id,
-		clientSecret: secrets.reddit_app_secret,
-		refreshToken: cryptr.decrypt(user.reddit_api_refresh_token_encrypted)
-	});
-
-	let item = null;
-	let item_fn = null; // https://www.reddit.com/dev/api/#fullnames
-	switch (item_type) {
-		case "post":
-			item = requester.getSubmission(item_id);
-			item_fn = `t3_${item_id}`;
-			break;
-		case "comment":
-			item = requester.getComment(item_id);
-			item_fn = `t1_${item_id}`;
-			break;
-		default:
-			break;
-	}
-
-	let replace_latest_fn = null;
-	if (item_category == "saved") {
-		replace_latest_fn = (item_fn == user.category_update_info.saved.latest_fn_mixed ? true : false);
-	} else {
-		replace_latest_fn = (item_fn == user.category_update_info[item_category][`latest_fn_${item_type}s`] ? true : false);
-	}
-	
-	switch (item_category) {
-		case "saved":
-			await item.unsave();
-			break;
-		case "created":
-			await item.delete();
-			break;
-		case "upvoted":
-		case "downvoted":
-			await item.unvote();
-			break;
-		case "hidden":
-			await item.unhide();
-			break;
-		default:
-			break;
-	}
-
-	if (replace_latest_fn) {
-		const me = await requester.getMe();
-
-		let listing = null;
-		const options = {
-			limit: 1
-		};
-
-		switch (item_category) {
-			case "saved":
-				listing = await me.getSavedContent(options);
-				break;
-			case "created":
-				if (item_type == "post") {
-					listing = await me.getSubmissions(options);
-				} else if (item_type == "comment") {
-					listing = await me.getComments(options);
-				}
-				break;
-			case "upvoted":
-				listing = await me.getUpvotedContent(options);
-				break;
-			case "downvoted":
-				listing = await me.getDownvotedContent(options);
-				break;
-			case "hidden":
-				listing = await me.getHiddenContent(options);
-				break;
-			default:
-				break;
-		}
-
-		const latest_fn = (listing.length != 0 ? listing[0].name : null);
-		if (item_category == "saved") {
-			user.category_update_info.saved.latest_fn_mixed = latest_fn;
-		} else {
-			user.category_update_info[item_category][`latest_fn_${item_type}s`] = latest_fn;
-		}
-
-		await sql.query(`
-			update user_ 
-			set category_update_info = '${JSON.stringify(user.category_update_info)}' 
-			where username = '${user.username}';
-		`);
-	}
-}
-
 let update_all_completed = null;
 async function update_all(io) { // synchronous one-by-one user update till all users are updated
 	update_all_completed = false;
@@ -612,17 +676,17 @@ async function update_all(io) { // synchronous one-by-one user update till all u
 
 								if (epoch.now() - user.last_active_epoch <= 15552000) { // 6mo
 									if (user.last_updated_epoch && epoch.now() - user.last_updated_epoch >= 30) {
-										const pre_update_category_update_info = JSON.parse(JSON.stringify(user.category_update_info));
+										const pre_update_category_sync_info = JSON.parse(JSON.stringify(user.category_sync_info));
 	
 										await user.update();
 										
-										const post_update_category_update_info = user.category_update_info;
+										const post_update_category_sync_info = user.category_sync_info;
 										
 										const socket_id = usernames_to_socket_ids[user.username];
 										if (socket_id) {
 											const categories_w_new_data = [];
-											for (const category in user.category_update_info) {
-												(post_update_category_update_info[category].latest_new_data_epoch > pre_update_category_update_info[category].latest_new_data_epoch ? categories_w_new_data.push(category) : null);
+											for (const category in user.category_sync_info) {
+												(post_update_category_sync_info[category].latest_new_data_epoch > pre_update_category_sync_info[category].latest_new_data_epoch ? categories_w_new_data.push(category) : null);
 											}
 											(categories_w_new_data.length != 0 ? io.to(socket_id).emit("show refresh alert", categories_w_new_data) : null);
 	
@@ -684,6 +748,5 @@ export {
 	socket_ids_to_usernames,
 	fill_usernames_to_socket_ids,
 	get,
-	delete_item_from_reddit_acc,
 	cycle_update_all
 };

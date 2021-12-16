@@ -41,11 +41,26 @@ async function insert_data(db, data) {
 				const icon_url_key = entry[0];
 				const icon_url_value = entry[1];
 
-				updates[`${category}/item_sub_icon_urls/${icon_url_key.replace("/", "|")}`] = icon_url_value;
+				updates[`${category}/item_sub_icon_urls/${icon_url_key.replace("/", "|").replace(".", ",")}`] = icon_url_value;
 			}
 		}
 	}
 	
+	const ref = db.ref().root;
+	await ref.update(updates);
+}
+
+async function delete_imported_fns(db, fns) {
+	const updates = {};
+
+	for (const category in fns) {
+		if (fns[category]) {
+			for (const fn of fns[category]) {
+				updates[`${category}/item_fns_to_import/${fn}`] = null;
+			}
+		}
+	}
+
 	const ref = db.ref().root;
 	await ref.update(updates);
 }
@@ -64,5 +79,6 @@ export {
 	get_db,
 	is_empty,
 	insert_data,
+	delete_imported_fns,
 	create_new_auth_token
 };

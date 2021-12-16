@@ -63,7 +63,7 @@ async function init_db() {
 		create table if not exists user_ (
 			username text primary key, 
 			reddit_api_refresh_token_encrypted text, -- decrypt ➔ string
-			category_update_info json, 
+			category_sync_info json, 
 			last_updated_epoch bigint, 
 			last_active_epoch bigint, 
 			email_encrypted text, -- decrypt ➔ string

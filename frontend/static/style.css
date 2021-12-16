@@ -284,3 +284,7 @@ img {
 	border: 2px solid;
 	border-color: rgb(52, 58, 64);
 }
+
+#files_input_btn:hover {
+	color: grey;
+}

@@ -3,7 +3,6 @@ const run_config = (backend.toLowerCase().slice(0, 20) == "/mnt/c/users/j9108c/"
 console.log(`${run_config}: ${backend}`);
 
 const secrets = (run_config == "dev" ? (await import(`${backend}/.secrets.mjs`)).dev : (await import(`${backend}/.secrets.mjs`)).prod);
-const logger = await import(`${backend}/model/logger.mjs`);
 const sql = await import(`${backend}/model/sql.mjs`);
 const file = await import(`${backend}/model/file.mjs`);
 const firebase = await import(`${backend}/model/firebase.mjs`);
@@ -27,7 +26,8 @@ const app = express();
 const app_name = "eternity";
 const server = http.createServer(app);
 const io = new socket_io_server.Server(server, {
-	cors: (run_config == "dev" ? {origin: "*"} : null)
+	cors: (run_config == "dev" ? {origin: "*"} : null),
+	maxHttpBufferSize: 1000000 // 1mb in bytes
 });
 const app_socket = socket_io_client.io("http://localhost:1026", {
 	autoConnect: false,
@@ -49,9 +49,9 @@ process.nextTick(() => {
 });
 
 const frontend = backend.replace("backend", "frontend");
+let dev_private_ip_copy = null;
 let countdown_copy = null;
 let domain_request_info_copy = null;
-let dev_private_ip_copy = null;
 const maintenance_active = [false];
 
 app.use(fileupload({
@@ -238,20 +238,19 @@ app.all("*", (req, res) => {
 io.on("connect", (socket) => {
 	console.log(`socket (${socket.id}) connected`);
 
-	let username = null;
+	socket.username = null;
+	socket.firebase_instances_created = false; // clientside firebase instances (app, auth, db)
+
+	socket.on("layout mounted", () => {
+		(countdown_copy ? io.to(socket.id).emit("update countdown", countdown_copy) : null);
+		(domain_request_info_copy ? io.to(socket.id).emit("update domain request info", domain_request_info_copy) : null);
+	});
 
 	socket.on("navigation", (route) => {
-		io.to(socket.id).emit("update countdown", countdown_copy);
-		if (domain_request_info_copy) {
-			io.to(socket.id).emit("update domain request info", domain_request_info_copy);
-		} else {
-			setTimeout(() => {
-				(domain_request_info_copy ? io.to(socket.id).emit("update domain request info", domain_request_info_copy) : null);
-			}, 5000);
-		}
-		
 		switch (route) {
 			case "index":
+				break;
+			case "terms_and_privacy":
 				break;
 			default:
 				break;
@@ -261,31 +260,28 @@ io.on("connect", (socket) => {
 	});
 
 	socket.on("page switch", async (page) => {
+		let u = null;
+
 		switch (page) {
 			case "landing":
 				break;
 			case "unlock":
-				username = user.socket_ids_to_usernames[socket.id];
+				socket.username = user.socket_ids_to_usernames[socket.id];
 				break;
 			case "loading":
-				username = user.socket_ids_to_usernames[socket.id];
+				socket.username = user.socket_ids_to_usernames[socket.id];
 				try {
-					const u = await user.get(username);
+					u = await user.get(socket.username);
 					await u.update(io, socket.id);
 				} catch (err) {
 					console.error(err);
 				}
 				break;
 			case "access":
-				username = user.socket_ids_to_usernames[socket.id];
+				socket.username = user.socket_ids_to_usernames[socket.id];
 				try {
-					const u = await user.get(username);
+					u = await user.get(socket.username);
 
-					const app = firebase.create_app(JSON.parse(cryptr.decrypt(u.firebase_service_acc_key_encrypted)), JSON.parse(cryptr.decrypt(u.firebase_web_app_config_encrypted)).databaseURL, u.username);
-					const auth_token = await firebase.create_new_auth_token(app);
-					firebase.free_app(app).catch((err) => console.error(err));
-			
-					io.to(socket.id).emit("initialize", JSON.parse(cryptr.decrypt(u.firebase_web_app_config_encrypted)), auth_token);
 					io.to(socket.id).emit("store last updated epoch", u.last_updated_epoch);
 
 					sql.query(`
@@ -300,10 +296,24 @@ io.on("connect", (socket) => {
 			default:
 				break;
 		}
+
+		if (u && !socket.firebase_instances_created) {
+			try {
+				const app = firebase.create_app(JSON.parse(cryptr.decrypt(u.firebase_service_acc_key_encrypted)), JSON.parse(cryptr.decrypt(u.firebase_web_app_config_encrypted)).databaseURL, u.username);
+				const auth_token = await firebase.create_new_auth_token(app);
+				firebase.free_app(app).catch((err) => console.error(err));
+	
+				io.to(socket.id).emit("create firebase instances", JSON.parse(cryptr.decrypt(u.firebase_web_app_config_encrypted)), auth_token);
+				socket.firebase_instances_created = true;
+				// console.log(`created firebase instances clientside (${socket.username})`);
+			} catch (err) {
+				console.error(err);
+			}
+		}
 	});
 
 	socket.on("validate firebase info", async (web_app_config) => {
-		const key_path = `${backend}/tempfiles/${username}_firebase_service_acc_key.json`;
+		const key_path = `${backend}/tempfiles/${socket.username}_firebase_service_acc_key.json`;
 		const key_string = await filesystem.promises.readFile(key_path, "utf-8");
 		const key_obj = JSON.parse(key_string);
 
@@ -320,7 +330,7 @@ io.on("connect", (socket) => {
 		}
 
 		try {
-			const app = firebase.create_app(key_obj, web_app_config.databaseURL, username);
+			const app = firebase.create_app(key_obj, web_app_config.databaseURL, socket.username);
 			const db = firebase.get_db(app);
 			const db_is_empty = await firebase.is_empty(db);
 			firebase.free_app(app).catch((err) => console.error(err));
@@ -357,10 +367,10 @@ io.on("connect", (socket) => {
 		io.to(socket.id).emit("disable button", "verify");
 		
 		const obj = {
-			username: username,
+			username: socket.username,
 			email_encrypted: socket.email_encrypted = cryptr.encrypt(email_addr)
 		};
-		const verification_url = `${(run_config == "dev" ? "http://"+dev_private_ip_copy+":"+secrets.port : "https://eternity.j9108c.com")}/email_verification?token=${cryptr.encrypt(username + " " + socket.id)}`;
+		const verification_url = `${(run_config == "dev" ? "http://"+dev_private_ip_copy+":"+secrets.port : "https://eternity.j9108c.com")}/email_verification?token=${cryptr.encrypt(socket.username + " " + socket.id)}`;
 		email.send(obj, "verify your email", `you have requested a new eternity account and specified this email (<a href="mailto:${email_addr}">${email_addr}</a>) as contact. to continue, click this link: <a href="${verification_url}" target="_blank">${verification_url}</a>. if you did not do this, please ignore this email`);
 
 		io.to(socket.id).emit("alert", "verify", "click on the link sent to this email to verify that it's your email. check your spam folder if you don't see it. the verification must be done while this page is open, so don't close or navigate away from this page", "primary");
@@ -371,7 +381,7 @@ io.on("connect", (socket) => {
 	
 		const username_from_token = decrypted_token.split(" ")[0];
 		const socket_id_from_token = decrypted_token.split(" ")[1];
-		if (!(username_from_token == username && socket_id_from_token == socket.id)) {
+		if (!(username_from_token == socket.username && socket_id_from_token == socket.id)) {
 			io.to(socket.id).emit("alert", "verify", "verification failed", "danger");
 			return;
 		} else {
@@ -390,7 +400,7 @@ io.on("connect", (socket) => {
 					email_encrypted = '${socket.email_encrypted}', 
 					firebase_service_acc_key_encrypted = '${socket.firebase_service_acc_key_encrypted}', 
 					firebase_web_app_config_encrypted = '${socket.firebase_web_app_config_encrypted}' 
-				where username = '${username}';
+				where username = '${socket.username}';
 			`);
 	
 			io.to(socket.id).emit("switch page to loading");
@@ -399,13 +409,18 @@ io.on("connect", (socket) => {
 		}
 	});
 
-	socket.on("delete item from reddit acc", (item_id, item_category, item_type) => {
-		user.delete_item_from_reddit_acc(username, item_id, item_category, item_type).catch((err) => console.error(err));
+	socket.on("delete item from reddit acc", async (item_id, item_category, item_type) => {
+		try {
+			const u = await user.get(socket.username);
+			u.delete_item_from_reddit_acc(item_id, item_category, item_type).catch((err) => console.error(err));
+		} catch (err) {
+			console.error(err);
+		}
 	});
 
 	socket.on("disconnect", () => {
-		if (username) {
-			(Object.keys(user.usernames_to_socket_ids).includes(username) ? user.usernames_to_socket_ids[username] = null : null); // set to null; not delete, bc username is needed in user.update_all
+		if (socket.username) { // logged in
+			(socket.username in user.usernames_to_socket_ids ? user.usernames_to_socket_ids[socket.username] = null : null); // set to null; not delete, bc username is needed in user.update_all
 			delete user.socket_ids_to_usernames[socket.id];	
 		}
 	});
@@ -415,16 +430,16 @@ app_socket.on("connect", () => {
 	console.log("connected as client to j9108c (localhost:1026)");
 });
 
+app_socket.on("store dev private ip", (dev_private_ip) => {
+	dev_private_ip_copy = dev_private_ip;
+});
+
 app_socket.on("update countdown", (countdown) => {
 	io.emit("update countdown", countdown_copy = countdown);
 });
 
 app_socket.on("update domain request info", (domain_request_info) => {
 	io.emit("update domain request info", domain_request_info_copy = domain_request_info);
-});
-
-app_socket.on("store dev private ip", (dev_private_ip) => {
-	dev_private_ip_copy = dev_private_ip;
 });
 
 app_socket.connect();
