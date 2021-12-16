@@ -275,6 +275,7 @@ io.on("connect", (socket) => {
 					await u.update(io, socket.id);
 				} catch (err) {
 					console.error(err);
+					(u && u.firebase_app ? firebase.free_app(u.firebase_app).catch((err) => console.error(err)) : null);
 				}
 				break;
 			case "access":

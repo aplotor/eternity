@@ -251,6 +251,7 @@ class User {
 		try {
 			await firebase.insert_data(this.firebase_db, this.new_data);
 			await firebase.delete_imported_fns(this.firebase_db, this.imported_fns_to_delete);
+			firebase.free_app(this.firebase_app).catch((err) => console.error(err));
 			(io ? io.to(socket_id).emit("update progress", ++progress, complete) : null);
 		} catch (err) {
 			console.error(err);
@@ -266,7 +267,6 @@ class User {
 				`).catch((err) => console.error(err));
 			}
 
-			firebase.free_app(this.firebase_app).catch((err) => console.error(err));
 			return;
 		}
 
@@ -282,7 +282,6 @@ class User {
 
 		delete this.new_data;
 		delete this.currently_requesting_icon_sets;
-		firebase.free_app(this.firebase_app).catch((err) => console.error(err));
 	}
 	async sync_category(category, type) {
 		let listing = null;
@@ -671,8 +670,9 @@ async function update_all(io) { // synchronous one-by-one user update till all u
 				next() {
 					if (this.i < all_usernames.length) {
 						return new Promise(async (resolve, reject) => {
+							let user = null;
 							try {
-								const user = await get(all_usernames[this.i]);
+								user = await get(all_usernames[this.i]);
 
 								if (epoch.now() - user.last_active_epoch <= 15552000) { // 6mo
 									if (user.last_updated_epoch && epoch.now() - user.last_updated_epoch >= 30) {
@@ -709,6 +709,8 @@ async function update_all(io) { // synchronous one-by-one user update till all u
 									console.error(err);
 									logger.error(err);
 								}
+
+								(user && user.firebase_app ? firebase.free_app(user.firebase_app).catch((err) => console.error(err)) : null);
 							} finally {
 								resolve({
 									value: this.i++,

@@ -65,6 +65,10 @@
 			}
 		});
 
+		setInterval(() => {
+			(last_updated_epoch ? last_updated_wrapper.innerHTML = utils.time_since(last_updated_epoch) : null);
+		}, 1000);
+
 		try {
 			await new Promise((resolve, reject) => {
 				const interval_id = setInterval(() => {
@@ -82,10 +86,6 @@
 		} catch (err) {
 			console.error(err);
 		}
-		
-		setInterval(() => {
-			(last_updated_epoch ? last_updated_wrapper.innerHTML = utils.time_since(last_updated_epoch) : null);
-		}, 1000);
 
 		jQuery(subreddit_select).selectpicker();
 		subreddit_select_btn = document.getElementsByClassName("bs-placeholder")[0];
