@@ -45,19 +45,6 @@ async function init_db() {
 		values (0, 0) 
 		on conflict do nothing;
 	`);
-	
-	await client.query(`
-		create table if not exists maintenance (
-			id int primary key, 
-			active bool not null
-		);
-	`);
-	console.log("created table (maintenance) if not exist");
-	await client.query(`
-		insert into maintenance 
-		values (0, false) 
-		on conflict do nothing;
-	`);
 
 	await client.query(`
 		create table if not exists user_ (
@@ -116,27 +103,10 @@ async function add_visit() {
 	`);
 }
 
-async function get_maintenance_status(maintenance_active) {
-	const rows = await query(`
-		select active 
-		from maintenance 
-		where id = 0;
-	`);
-	maintenance_active[0] = rows[0].active;
-}
-function cycle_get_maintenance_status(maintenance_active) {
-	get_maintenance_status(maintenance_active).catch((err) => console.error(err));
-
-	setInterval(() => {
-		get_maintenance_status(maintenance_active).catch((err) => console.error(err));
-	}, 10000);
-}
-
 export {
 	pool,
 	init_db,
 	cycle_backup_db,
 	query,
-	add_visit,
-	cycle_get_maintenance_status
+	add_visit
 };

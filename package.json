@@ -4,7 +4,7 @@
 	"repository": "github:j9108c/eternity",
 	"license": "AGPL3",
 	"scripts": {
-		"dev": "concurrently --names \"backend,frontend\" --prefix \"{name}:\" --prefix-colors \"#f2caff,#61f2f2\" \"cd ./backend/ && npm run dev\" \"wait-on tcp:1201 && cd ./frontend/ && npm run dev\"",
+		"dev": "concurrently --names \"backend,frontend\" --prefix \"{name}:\" --prefix-colors \"#f2caff,#61f2f2\" \"cd ./backend/ && npm run dev\" \"wait-on tcp:1301 && cd ./frontend/ && npm run dev\"",
 		"build": "cd ./frontend/ && npm run build",
 		"prod_start": "cd ./backend/ && npm run prod_start",
 		"prod_stop": "cd ./backend/ && npm run prod_stop",

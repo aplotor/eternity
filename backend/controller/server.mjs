@@ -29,13 +29,12 @@ const io = new socket_io_server.Server(server, {
 	cors: (run_config == "dev" ? {origin: "*"} : null),
 	maxHttpBufferSize: 1000000 // 1mb in bytes
 });
-const app_socket = socket_io_client.io("http://localhost:1026", {
+const app_socket = socket_io_client.io("http://localhost:1101", {
 	autoConnect: false,
 	reconnect: true,
 	extraHeaders: {
 		app: app_name,
-		port: secrets.port - 1,
-		secret: secrets.app_socket_secret
+		secret: secrets.local_sockets_secret
 	}
 });
 
@@ -44,15 +43,11 @@ await sql.init_db();
 sql.cycle_backup_db();
 await user.fill_usernames_to_socket_ids();
 user.cycle_update_all(io);
-process.nextTick(() => {
-	sql.cycle_get_maintenance_status(maintenance_active);
-});
 
 const frontend = backend.replace("backend", "frontend");
-let dev_private_ip_copy = null;
-let countdown_copy = null;
-let domain_request_info_copy = null;
-const maintenance_active = [false];
+let dev_private_ip = null;
+let other_apps_urls = null;
+let domain_request_info = null;
 
 app.use(fileupload({
 	limits: {
@@ -61,10 +56,6 @@ app.use(fileupload({
 }));
 
 app.use("/", express.static(`${frontend}/build/`));
-
-app.use((req, res, next) => {
-	(maintenance_active[0] == true ? res.status(503).sendFile(`${frontend}/build/index.html`) : next());
-});
 
 app.get("/", (req, res) => {
 	res.status(200).sendFile(`${frontend}/build/index.html`);
@@ -242,15 +233,16 @@ io.on("connect", (socket) => {
 	socket.firebase_instances_created = false; // clientside firebase instances (app, auth, db)
 
 	socket.on("layout mounted", () => {
-		(countdown_copy ? io.to(socket.id).emit("update countdown", countdown_copy) : null);
-		(domain_request_info_copy ? io.to(socket.id).emit("update domain request info", domain_request_info_copy) : null);
+		io.to(socket.id).emit("store other apps urls", other_apps_urls);
+
+		io.to(socket.id).emit("update domain request info", domain_request_info);
 	});
 
 	socket.on("navigation", (route) => {
 		switch (route) {
 			case "index":
 				break;
-			case "terms_and_privacy":
+			case "terms_privacy_support":
 				break;
 			default:
 				break;
@@ -354,7 +346,7 @@ io.on("connect", (socket) => {
 		io.to(socket.id).emit("alert", "validate", "validation success", "success");
 		io.to(socket.id).emit("disable button", "validate");
 
-		(socket.firebase_service_acc_key_encrypted && socket.firebase_web_app_config_encrypted && socket.verified_email ? io.to(socket.id).emit("allow agree and continue") : null);
+		(socket.firebase_service_acc_key_encrypted && socket.firebase_web_app_config_encrypted && socket.verified_email ? io.to(socket.id).emit("allow continue") : null);
 	});
 
 	socket.on("verify email", (email_addr) => {
@@ -371,7 +363,7 @@ io.on("connect", (socket) => {
 			username: socket.username,
 			email_encrypted: socket.email_encrypted = cryptr.encrypt(email_addr)
 		};
-		const verification_url = `${(run_config == "dev" ? "http://"+dev_private_ip_copy+":"+secrets.port : "https://eternity.j9108c.com")}/email_verification?token=${cryptr.encrypt(socket.username + " " + socket.id)}`;
+		const verification_url = `${(run_config == "dev" ? "http://"+dev_private_ip+":"+secrets.port : "https://eternity.portals.sh")}/email_verification?token=${cryptr.encrypt(socket.username + " " + socket.id)}`;
 		email.send(obj, "verify your email", `you have requested a new eternity account and specified this email (<a href="mailto:${email_addr}">${email_addr}</a>) as contact. to continue, click this link: <a href="${verification_url}" target="_blank">${verification_url}</a>. if you did not do this, please ignore this email`);
 
 		io.to(socket.id).emit("alert", "verify", "click on the link sent to this email to verify that it's your email. check your spam folder if you don't see it. the verification must be done while this page is open, so don't close or navigate away from this page", "primary");
@@ -390,7 +382,7 @@ io.on("connect", (socket) => {
 			io.to(socket.id).emit("alert", "verify", "verification success", "success");
 		}
 
-		(socket.firebase_service_acc_key_encrypted && socket.firebase_web_app_config_encrypted && socket.verified_email ? io.to(socket.id).emit("allow agree and continue") : null);
+		(socket.firebase_service_acc_key_encrypted && socket.firebase_web_app_config_encrypted && socket.verified_email ? io.to(socket.id).emit("allow continue") : null);
 	});
 	
 	socket.on("save firebase info and email", async () => {
@@ -428,19 +420,23 @@ io.on("connect", (socket) => {
 });
 
 app_socket.on("connect", () => {
-	console.log("connected as client to j9108c (localhost:1026)");
+	console.log("connected as client to portals (localhost:1101)");
 });
 
-app_socket.on("store dev private ip", (dev_private_ip) => {
-	dev_private_ip_copy = dev_private_ip;
+app_socket.on("store dev private ip", (ip) => {
+	dev_private_ip = ip;
+});
+
+app_socket.on("store other apps urls", (urls) => {
+	other_apps_urls = urls;
 });
 
 app_socket.on("update countdown", (countdown) => {
-	io.emit("update countdown", countdown_copy = countdown);
+	io.emit("update countdown", countdown);
 });
 
-app_socket.on("update domain request info", (domain_request_info) => {
-	io.emit("update domain request info", domain_request_info_copy = domain_request_info);
+app_socket.on("update domain request info", (info) => {
+	io.emit("update domain request info", domain_request_info = info);
 });
 
 app_socket.connect();

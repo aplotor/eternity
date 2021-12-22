@@ -18,13 +18,11 @@
 		file_input_label,
 		validate_btn,
 		validate_alert_wrapper,
-		instruction_video_anchor,
-		instruction_video_wrapper,
 		email_input,
 		verify_btn,
 		verify_alert_wrapper,
-		agree_and_continue_btn_wrapper,
-		agree_and_continue_btn
+		continue_btn_wrapper,
+		continue_btn
 	] = [null];
 	svelte.onMount(() => {
 		globals_r.socket.emit("page switch", "unlock");
@@ -55,9 +53,9 @@
 			}
 		});
 
-		globals_r.socket.on("allow agree and continue", () => {
+		globals_r.socket.on("allow continue", () => {
 			jQuery('[data-toggle="tooltip"]').tooltip("disable");
-			agree_and_continue_btn.removeAttribute("disabled");
+			continue_btn.removeAttribute("disabled");
 		});
 
 		globals_r.socket.on("switch page to loading", () => {
@@ -142,11 +140,6 @@
 			request.send(data);
 		});
 
-		instruction_video_anchor.addEventListener("click", (evt) => {
-			evt.preventDefault();
-			instruction_video_wrapper.classList.toggle("d-none");
-		});
-
 		email_input.addEventListener("keydown", (evt) => {
 			(evt.key == "Enter" ? verify_btn.click() : null);
 		});
@@ -162,15 +155,15 @@
 			globals_r.socket.emit("verify email", email);
 		});
 
-		agree_and_continue_btn_wrapper.addEventListener("mouseenter", (evt) => {
-			(agree_and_continue_btn.disabled ? jQuery('[data-toggle="tooltip"]').tooltip("show") : null);
+		continue_btn_wrapper.addEventListener("mouseenter", (evt) => {
+			(continue_btn.disabled ? jQuery('[data-toggle="tooltip"]').tooltip("show") : null);
 		});
 
-		agree_and_continue_btn_wrapper.addEventListener("mouseleave", (evt) => {
-			(agree_and_continue_btn.disabled ? jQuery('[data-toggle="tooltip"]').tooltip("hide") : null);
+		continue_btn_wrapper.addEventListener("mouseleave", (evt) => {
+			(continue_btn.disabled ? jQuery('[data-toggle="tooltip"]').tooltip("hide") : null);
 		});
 
-		agree_and_continue_btn.addEventListener("click", (evt) => {
+		continue_btn.addEventListener("click", (evt) => {
 			evt.target.innerHTML = '<div class="d-flex justify-content-center pt-2"><div class="dot-carousel mr-4"></div><span class="mt-n2">saving</span><div class="dot-carousel ml-4"></div></div>';
 
 			setTimeout(() => {
@@ -182,13 +175,13 @@
 		globals_r.socket.off("alert");
 		globals_r.socket.off("disable button");
 		globals_r.socket.off("emit back encrypted token");
-		globals_r.socket.off("allow agree and continue");
+		globals_r.socket.off("allow continue");
 		globals_r.socket.off("switch page to loading");
 	});
 
 	function handle_window_keydown(evt) {
 		if (evt.key == "Enter") {
-			(!agree_and_continue_btn.hasAttribute("disabled") ? agree_and_continue_btn.click() : null);
+			(!continue_btn.hasAttribute("disabled") ? continue_btn.click() : null);
 		}
 	}
 </script>
@@ -199,14 +192,13 @@
 	<h1 class="display-4">{globals_r.app_name}</h1>
 	<div id="unlock_container" class="card card-body bg-dark text-left mt-3 pb-3">
 		<div class="form-group">
-			<p>to use eternity, you will need to go to <a href="https://console.firebase.google.com" target="_blank">Firebase console</a> and</p>
+			<div class="embed-responsive embed-responsive-16by9 mt-2"><iframe title="instruction video" class="embed-responsive-item" src="https://www.youtube.com/embed/shvTql5MS3o" allowfullscreen></iframe></div>
+			<p class="mt-4">to use eternity, you will need to go to <a href="https://console.firebase.google.com" target="_blank">Firebase console</a> and</p>
 			<ul class="line_height_1 mt-n2">
-				<li class="mt-3">follow <a bind:this={instruction_video_anchor} href="#">this instruction video</a> for a step-by-step guide on how to do the following</li>
-				<li bind:this={instruction_video_wrapper} class="no_bullet embed-responsive embed-responsive-16by9 mt-2 d-none"><iframe title="instruction video" class="embed-responsive-item" src="https://www.youtube.com/embed/shvTql5MS3o" allowfullscreen></iframe></li>
 				<li class="mt-2">create a new Firebase project <span class="text-light">named <b>{`eternity-${username.split("_").join("-")}`}</b></span></li>
-				<li class="mt-2">create a Realtime Database where your Reddit data will be stored (it is free up to 1gb disk storage, which should be enough to last you a very long time. e.g., 5000 items ≈ 1.5mb)</li>
+				<li class="mt-2">create a Realtime Database where your Reddit items will be stored</li>
 				<li class="mt-2">set the Realtime Database read and write security rules to <b>"auth.token.owner == true"</b></li>
-				<li class="mt-2">enable Authentication from domain <b>eternity.j9108c.com</b></li>
+				<li class="mt-2">enable Authentication from domain <b>eternity.portals.sh</b></li>
 				<li class="mt-2">get a service account key file and a web app config</li>
 				<li class="no_bullet d-flex mt-2">
 					<div class="w-100">
@@ -219,29 +211,15 @@
 					<button bind:this={validate_btn} class="btn btn-primary shadow-none ml-2">validate</button>
 				</li>
 				<li class="no_bullet mt-2"><div bind:this={validate_alert_wrapper}></div></li>
-			</ul>
-			<p class="mt-4">terms of service</p>
-			<ul class="line_height_1 mt-n2">
-				<li class="mt-3">this app is released under the <a target="_blank" href="https://choosealicense.com/licenses/agpl-3.0">AGPL3 License</a></li>
-				<li class="mt-2">you must log in to eternity at least once every 6 months or else your eternity account will be marked inactive and new Reddit data will not continue to sync to your database</li>
-				<li class="mt-2">do not edit any of the Firebase project settings or database contents directly from Firebase. if you do and your eternity instance stops working, you may have to restart</li>
-				<li class="mt-2">if by any chance your database exceeds the Firebase free tier disk storage, you will need to upgrade your Firebase plan in order for eternity to continue storing your new Reddit data. or, you can choose to export out the existing data and wipe the database to continue for free</li>
-			</ul>
-			<p class="mt-4">privacy policy</p>
-			<ul class="line_height_1 mt-n2">
-				<li class="mt-3">login is handled directly by Reddit (<a href="https://github.com/reddit-archive/reddit/wiki/OAuth2">oauth2</a>). your password is NEVER sent to eternity</li>
-				<li class="mt-2">eternity uses your Reddit authorization to continuously retrieve your new Reddit data, and stores it in your database using the Firebase info you provided</li>
-				<li class="mt-2">your Reddit data is stored solely in your own database, and your database is used solely for your own data</li>
-				<!-- <li class="mt-2">any notifications and updates regarding your eternity account (e.g., your account becomes inactive, your database reaches its storage limit) will be sent from <a href="mailto:eternity@j9108c.com">eternity@j9108c.com</a> to your email</li> -->
-				<li class="mt-2">any notifications and updates regarding your eternity account (e.g., your account becomes inactive, your database reaches its storage limit) will be sent to your email</li>
+				<li class="mt-2">provide a contact email for notifications and updates regarding your eternity account</li>
 				<li class="no_bullet d-flex mt-2">
-					<input bind:this={email_input} type="text" class="form-control bg-light" placeholder="your email address"/>
+					<input bind:this={email_input} type="text" class="form-control bg-light" placeholder="contact email address"/>
 					<button bind:this={verify_btn} class="btn btn-primary shadow-none ml-2">verify</button>
 				</li>
 				<li class="no_bullet mt-2"><div bind:this={verify_alert_wrapper}></div></li>
 			</ul>
-			<div bind:this={agree_and_continue_btn_wrapper} data-toggle="tooltip" data-trigger="manual" data-placement="top" title="complete the required steps above first">
-				<button bind:this={agree_and_continue_btn} class="btn btn-primary shadow-none w-100 mt-3" disabled>agree and continue</button>
+			<div bind:this={continue_btn_wrapper} data-toggle="tooltip" data-trigger="manual" data-placement="top" title="complete the required steps above first">
+				<button bind:this={continue_btn} class="btn btn-primary shadow-none w-100 mt-3" disabled>continue</button>
 			</div>
 		</div>
 	</div>

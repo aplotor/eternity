@@ -421,7 +421,7 @@ class User {
 					content: (type == "posts" ? item.title : item.body),
 					author: "u/"+item.author.name,
 					sub: item.subreddit_name_prefixed,
-					url: (item.permalink.endsWith("/") ? "https://www.reddit.com"+item.permalink.slice(0, -1) : "https://www.reddit.com"+item.permalink),
+					url: "https://www.reddit.com" + (item.permalink.endsWith("/") ? item.permalink.slice(0, -1) : item.permalink),
 					created_epoch: item.created_utc
 				};
 

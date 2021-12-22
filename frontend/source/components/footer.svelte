@@ -4,6 +4,7 @@
 	import * as svelte from "svelte";
 
 	const globals_r = globals.readonly;
+	const globals_w = globals.writable;
 </script>
 <script>
 	const current_year = new Date().getFullYear();
@@ -25,6 +26,10 @@
 		});
 
 		globals_r.socket.on("update domain request info", (domain_request_info) => {
+			if (!domain_request_info || Object.keys(domain_request_info).length == 0) {
+				return;
+			}
+			
 			last24hours_total_wrapper.innerHTML = domain_request_info.last24hours_total;
 			last7days_total_wrapper.innerHTML = domain_request_info.last7days_total;
 			last30days_total_wrapper.innerHTML = domain_request_info.last30days_total;
@@ -90,7 +95,7 @@
 <svelte:window on:keydown={handle_window_keydown}/>
 <footer class="text-center">
 	<p class="font_size_10 m-0">released under the <a target="_blank" href="https://choosealicense.com/licenses/agpl-3.0">AGPL3 License</a> &#169; 2021–{current_year}</p>
-	<p class="font_size_10 m-0"><a href="{globals_r.j9108c_url}/stats">cloudflare zone analytics</a></p>
+	<p class="font_size_10 m-0"><a href="{($globals_w.other_apps_urls ? $globals_w.other_apps_urls.portals.link : "#")}/stats">cloudflare zone stats</a></p>
 	<div class="btn-group dropdown">
 		<button bind:this={dropdown_btn} type="button" class="btn btn-link dropdown-toggle mt-n2 px-1 py-0" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" data-display="static"></button>
 		<div bind:this={dropdown_menu} class="dropdown-menu rounded-0 bg-light mt-n2 px-2 py-0" id="dropdown_menu">
@@ -107,7 +112,7 @@
 			<div class="dropdown-divider m-0"></div>
 			<div class="text-center mt-n1">
 				<p class="font_size_10 mt-1 mb-n2">updates in <span bind:this={countdown_wrapper}>?</span> seconds</p>
-				<a class="font_size_10" href="{globals_r.j9108c_url}/stats">full details</a>
+				<a class="font_size_10" href="{($globals_w.other_apps_urls ? $globals_w.other_apps_urls.portals.link : "#")}/stats">full details</a>
 			</div>
 		</div>
 	</div>

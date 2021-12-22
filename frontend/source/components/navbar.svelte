@@ -43,8 +43,8 @@
 			setTimeout(() => {
 				if (!settings_menu.classList.contains("show")) {
 					settings_btn.blur();
-					hide_import_notice();
 					hide_purge_warning();
+					(show_data_anchors ? hide_import_notice() : null);
 				}
 			}, 100);
 		});
@@ -55,8 +55,8 @@
 
 		purge_anchor.addEventListener("click", (evt) => {
 			evt.preventDefault();
-			hide_import_notice();
 			toggle_purge_warning();
+			(show_data_anchors ? hide_import_notice() : null);
 		});
 
 		purge_cancel_btn.addEventListener("click", (evt) => {
@@ -234,8 +234,8 @@
 
 		setTimeout(() => {
 			if (!settings_menu.classList.contains("show")) {
-				(import_notice ? hide_import_notice() : null);
 				hide_purge_warning();
+				(show_data_anchors ? hide_import_notice() : null);
 			}
 		}, 100);
 	}
@@ -249,8 +249,8 @@
 			setTimeout(() => {
 				if (!settings_menu.classList.contains("show")) {
 					settings_btn.blur();
-					(import_notice ? hide_import_notice() : null);
 					hide_purge_warning();
+					(show_data_anchors ? hide_import_notice() : null);
 				}
 			}, 100);
 		}
@@ -314,13 +314,6 @@
 
 <svelte:window on:click={handle_window_click} on:keydown={handle_window_keydown}/>
 <nav class="mt-5 px-5">
-	<span>
-		<a href={globals_r.j9108c_url}>index</a>
-		<span class="consolas mx-1">/</span>
-		<a href="{globals_r.j9108c_url}/apps">apps</a>
-		<span class="consolas mx-1">/</span>
-		<a class="boxed px-1" href="/">{globals_r.app_name}</a>
-	</span>
 	{#if username}
 		<span class="float-right">
 			<a href="https://www.reddit.com/u/{username}" target="_blank">u/<span id="username_wrapper">{username}</span></a>
@@ -388,6 +381,7 @@
 			<a href="/">return to app</a>
 		</span>
 	{/if}
+	<div class="clearfix"></div>
 </nav>
 {#if show_data_anchors}
 	<div bind:this={modal} class="modal fade" tabindex="-1">

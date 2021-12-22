@@ -10,11 +10,12 @@ const readonly = {
 	repo: `https://github.com/j9108c/${app_name}`,
 	description: "bypass Reddit's 1000-item listing limits by externally storing your Reddit items (saved, created, upvoted, downvoted, hidden) in your own personal database. new items are automatically synced so you'll never lose your Reddit data again",
 	backend: (run_config == "dev" ? "/backend" : ""),
-	socket: socket_io_client.io((run_config == "dev" ? `http://${(env.browser ? location.hostname : "localhost")}:1201` : "")),
-	j9108c_url: (run_config == "dev" ? `http://${(env.browser ? location.hostname : "localhost")}:1025` : "http://j9108c.com")
+	socket: socket_io_client.io((run_config == "dev" ? `http://${(env.browser ? location.hostname : "localhost")}:1301` : ""))
 };
 
 const writable = svelte_store.writable({ // global state
+	other_apps_urls: null,
+
 	firebase_app: null,
 	firebase_auth: null,
 	firebase_db: null

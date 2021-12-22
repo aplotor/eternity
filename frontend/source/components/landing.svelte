@@ -16,8 +16,8 @@
 <div class="text-center mt-3">
 	<div class="jumbotron bg-dark mb-0 py-5">
 		<h1 class="display-4">{globals_r.app_name}</h1>
-		<p class="lead text-left">bypass Reddit's 1000-item listing limits by externally storing your Reddit items (saved, created, upvoted, downvoted, hidden) in your own personal database. new items are automatically synced so you'll never lose your Reddit data again</p>
-		<p class="lead text-left">additional functionality: search for items, filter by subreddit, import csv data from <a href="https://www.reddit.com/settings/data-request" target="_blank">Reddit data request</a>, export data as json</p>
+		<p class="lead text-left">bypass Reddit's 1000-item listing limits by externally storing your Reddit items (saved, created, upvoted, downvoted, hidden) in your own database</p>
+		<p class="lead text-left">features: new items offline auto-sync, search for items, filter by subreddit, import csv data from <a href="https://www.reddit.com/settings/data-request" target="_blank">Reddit data request</a>, export data as json</p>
 		<hr class="bg-secondary my-4"/>
 		<div class="embed-responsive embed-responsive-16by9">
 			<iframe title="usage video" class="embed-responsive-item" src="https://www.youtube.com/embed/Ts7fO9wCuI0" allowfullscreen></iframe>
@@ -28,10 +28,10 @@
 			<li><a href="https://www.reddit.com/dev/api/oauth#scope_identity" target="_blank">identity</a>: to get your username</li>
 			<li><a href="https://www.reddit.com/dev/api/oauth#scope_history" target="_blank">history</a>: to get your items</li>
 			<li><a href="https://www.reddit.com/dev/api/oauth#scope_read" target="_blank">read</a>: to get icons of subreddits/users</li>
-			<li><a href="https://www.reddit.com/dev/api/oauth#scope_save" target="_blank">save</a>: to unsave items from your Reddit account (manual action)</li>
-			<li><a href="https://www.reddit.com/dev/api/oauth#scope_edit" target="_blank">edit</a>: to delete items from your Reddit account (manual action)</li>
-			<li><a href="https://www.reddit.com/dev/api/oauth#scope_vote" target="_blank">vote</a>: to unvote items from your Reddit account (manual action)</li>
-			<li><a href="https://www.reddit.com/dev/api/oauth#scope_report" target="_blank">report</a>: to unhide items from your Reddit account (manual action)</li>
+			<li><a href="https://www.reddit.com/dev/api/oauth#scope_save" target="_blank">save</a>: to unsave items (manual action)</li>
+			<li><a href="https://www.reddit.com/dev/api/oauth#scope_edit" target="_blank">edit</a>: to delete items (manual action)</li>
+			<li><a href="https://www.reddit.com/dev/api/oauth#scope_vote" target="_blank">vote</a>: to unvote items (manual action)</li>
+			<li><a href="https://www.reddit.com/dev/api/oauth#scope_report" target="_blank">report</a>: to unhide items (manual action)</li>
 		</ul>
 		<div class="row">
 			<div class="col-1 col-sm-3"></div>
