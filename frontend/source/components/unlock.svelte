@@ -23,8 +23,8 @@
 		email_input,
 		verify_btn,
 		verify_alert_wrapper,
-		continue_btn_wrapper,
-		continue_btn
+		save_and_continue_btn_wrapper,
+		save_and_continue_btn
 	] = [null];
 	svelte.onMount(() => {
 		globals_r.socket.emit("page switch", "unlock");
@@ -55,9 +55,9 @@
 			}
 		});
 
-		globals_r.socket.on("allow continue", () => {
+		globals_r.socket.on("allow save and continue", () => {
 			jQuery('[data-toggle="tooltip"]').tooltip("disable");
-			continue_btn.removeAttribute("disabled");
+			save_and_continue_btn.removeAttribute("disabled");
 		});
 
 		globals_r.socket.on("switch page to loading", () => {
@@ -162,15 +162,15 @@
 			globals_r.socket.emit("verify email", email);
 		});
 
-		continue_btn_wrapper.addEventListener("mouseenter", (evt) => {
-			(continue_btn.disabled ? jQuery('[data-toggle="tooltip"]').tooltip("show") : null);
+		save_and_continue_btn_wrapper.addEventListener("mouseenter", (evt) => {
+			(save_and_continue_btn.disabled ? jQuery('[data-toggle="tooltip"]').tooltip("show") : null);
 		});
 
-		continue_btn_wrapper.addEventListener("mouseleave", (evt) => {
-			(continue_btn.disabled ? jQuery('[data-toggle="tooltip"]').tooltip("hide") : null);
+		save_and_continue_btn_wrapper.addEventListener("mouseleave", (evt) => {
+			(save_and_continue_btn.disabled ? jQuery('[data-toggle="tooltip"]').tooltip("hide") : null);
 		});
 
-		continue_btn.addEventListener("click", (evt) => {
+		save_and_continue_btn.addEventListener("click", (evt) => {
 			evt.target.innerHTML = '<div class="d-flex justify-content-center pt-2"><div class="dot-carousel mr-4"></div><span class="mt-n2">saving</span><div class="dot-carousel ml-4"></div></div>';
 
 			setTimeout(() => {
@@ -182,13 +182,13 @@
 		globals_r.socket.off("alert");
 		globals_r.socket.off("disable button");
 		globals_r.socket.off("emit back encrypted token");
-		globals_r.socket.off("allow continue");
+		globals_r.socket.off("allow save and continue");
 		globals_r.socket.off("switch page to loading");
 	});
 
 	function handle_window_keydown(evt) {
 		if (evt.key == "Enter") {
-			(!continue_btn.hasAttribute("disabled") ? continue_btn.click() : null);
+			(!save_and_continue_btn.hasAttribute("disabled") ? save_and_continue_btn.click() : null);
 		}
 	}
 </script>
@@ -228,8 +228,8 @@
 				</li>
 				<li class="no_bullet mt-2"><div bind:this={verify_alert_wrapper}></div></li>
 			</ul>
-			<div bind:this={continue_btn_wrapper} data-toggle="tooltip" data-trigger="manual" data-placement="top" title="complete the required steps above first">
-				<button bind:this={continue_btn} class="btn btn-primary shadow-none w-100 mt-3" disabled>continue</button>
+			<div bind:this={save_and_continue_btn_wrapper} data-toggle="tooltip" data-trigger="manual" data-placement="top" title="complete the required steps above first">
+				<button bind:this={save_and_continue_btn} class="btn btn-primary shadow-none w-100 mt-3" disabled>save and continue</button>
 			</div>
 		</div>
 	</div>

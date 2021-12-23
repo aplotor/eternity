@@ -346,7 +346,7 @@ io.on("connect", (socket) => {
 		io.to(socket.id).emit("alert", "validate", "validation success", "success");
 		io.to(socket.id).emit("disable button", "validate");
 
-		(socket.firebase_service_acc_key_encrypted && socket.firebase_web_app_config_encrypted && socket.verified_email ? io.to(socket.id).emit("allow continue") : null);
+		(socket.firebase_service_acc_key_encrypted && socket.firebase_web_app_config_encrypted && socket.verified_email ? io.to(socket.id).emit("allow save and continue") : null);
 	});
 
 	socket.on("verify email", (email_addr) => {
@@ -382,7 +382,7 @@ io.on("connect", (socket) => {
 			io.to(socket.id).emit("alert", "verify", "verification success", "success");
 		}
 
-		(socket.firebase_service_acc_key_encrypted && socket.firebase_web_app_config_encrypted && socket.verified_email ? io.to(socket.id).emit("allow continue") : null);
+		(socket.firebase_service_acc_key_encrypted && socket.firebase_web_app_config_encrypted && socket.verified_email ? io.to(socket.id).emit("allow save and continue") : null);
 	});
 	
 	socket.on("save firebase info and email", async () => {
