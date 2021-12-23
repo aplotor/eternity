@@ -13,6 +13,8 @@
 	const dispatch = svelte.createEventDispatcher();
 	
 	let [
+		instruction_video_anchor,
+		instruction_video_wrapper,
 		config_input,
 		file_input,
 		file_input_label,
@@ -67,6 +69,11 @@
 		});
 
 		jQuery('[data-toggle="tooltip"]').tooltip("enable");
+
+		instruction_video_anchor.addEventListener("click", (evt) => {
+			evt.preventDefault();
+			instruction_video_wrapper.classList.toggle("d-none");
+		});
 
 		file_input.addEventListener("input", (evt) => {
 			file_input_label.innerText = file_input.files[0].name;
@@ -192,7 +199,10 @@
 	<h1 class="display-4">{globals_r.app_name}</h1>
 	<div id="unlock_container" class="card card-body bg-dark text-left mt-3 pb-3">
 		<div class="form-group">
-			<div class="embed-responsive embed-responsive-16by9 mt-2"><iframe title="instruction video" class="embed-responsive-item" src="https://www.youtube.com/embed/shvTql5MS3o" allowfullscreen></iframe></div>
+			<div class="text-center">
+				<b><a bind:this={instruction_video_anchor} href="#">SETUP GUIDE VIDEO</a></b>
+				<span bind:this={instruction_video_wrapper} class="no_bullet embed-responsive embed-responsive-16by9 d-none"><iframe title="instruction video" class="embed-responsive-item" src="https://www.youtube.com/embed/shvTql5MS3o" allowfullscreen></iframe></span>
+			</div>
 			<p class="mt-4">to use eternity, you will need to go to <a href="https://console.firebase.google.com" target="_blank">Firebase console</a> and</p>
 			<ul class="line_height_1 mt-n2">
 				<li class="mt-2">create a new Firebase project <span class="text-light">named <b>{`eternity-${username.split("_").join("-")}`}</b></span></li>
