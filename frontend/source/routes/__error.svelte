@@ -18,7 +18,7 @@
 		if (obj.status != 404) {
 			console.log(1);
 
-			ensure_redirect(obj.page.path);
+			ensure_redirect(obj.url.pathname);
 
 			return {
 				props: {
@@ -29,11 +29,11 @@
 			console.log(2);
 
 			try {
-				await axios.get(globals_r.backend + obj.page.path); // should throw an error
+				await axios.get(globals_r.backend + obj.url.pathname); // should throw an error
 			} catch (err) {
 				console.error(err);
 
-				ensure_redirect(obj.page.path);
+				ensure_redirect(obj.url.pathname);
 
 				return {
 					props: {

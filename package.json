@@ -11,7 +11,7 @@
 		"prod_update": "npm run prod_stop && git pull && (cd ./frontend/ && npm install) && (cd ./backend/ && npm install) && npm run build && npm run prod_start"
 	},
 	"devDependencies": {
-		"concurrently": "^6.4.0",
+		"concurrently": "^6.5.1",
 		"wait-on": "^6.0.0"
 	}
 }

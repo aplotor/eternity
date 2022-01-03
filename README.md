@@ -6,6 +6,7 @@ bypass Reddit's 1000-item listing limits by externally storing your Reddit items
 	- new items offline auto-sync
 	- search for items
 	- filter by subreddit
+	- unsave/delete/unvote/unhide items from Reddit directly on eternity
 	- import csv data from [Reddit data request](https://www.reddit.com/settings/data-request)
 	- export data as json
 

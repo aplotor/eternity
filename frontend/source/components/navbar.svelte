@@ -354,9 +354,9 @@
 					{/if}
 					<a bind:this={purge_anchor} href="#">purge account</a>
 					<div bind:this={purge_warning} class="bg-danger rounded text-light text-left line_height_1 mb-2 pb-1 d-none">
-						<p class="mx-1">are you sure you want to purge your account?</p>
-						<p class="mx-1">your data will stop being archived by eternity and cannot be restored</p>
-						<p class="mx-1">this does not affect your Reddit account/data in any way</p>
+						<p class="mx-1">are you sure you want to purge your eternity account?</p>
+						<p class="mx-1">your new Reddit items will not continue to sync to your database</p>
+						<p class="mx-1">this cannot be undone</p>
 						<p class="mx-1 mb-0">type <b>purge u/{username}</b> to confirm</p>
 						<form>
 							<div class="form-group d-flex justify-content-center mb-1">

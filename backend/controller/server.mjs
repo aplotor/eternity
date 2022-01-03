@@ -13,6 +13,7 @@ const email = await import(`${backend}/model/email.mjs`);
 
 import * as socket_io_server from "socket.io";
 import * as socket_io_client from "socket.io-client";
+import * as internal_ip from "internal-ip";
 import express from "express";
 import http from "http";
 import cookie_session from "cookie-session";
@@ -45,7 +46,6 @@ await user.fill_usernames_to_socket_ids();
 user.cycle_update_all(io);
 
 const frontend = backend.replace("backend", "frontend");
-let dev_private_ip = null;
 let other_apps_urls = null;
 let domain_request_info = null;
 
@@ -56,10 +56,6 @@ app.use(fileupload({
 }));
 
 app.use("/", express.static(`${frontend}/build/`));
-
-app.get("/", (req, res) => {
-	res.status(200).sendFile(`${frontend}/build/index.html`);
-});
 
 passport.use(new passport_reddit.Strategy({
 	clientID: secrets.reddit_app_id,
@@ -349,7 +345,7 @@ io.on("connect", (socket) => {
 		(socket.firebase_service_acc_key_encrypted && socket.firebase_web_app_config_encrypted && socket.verified_email ? io.to(socket.id).emit("allow save and continue") : null);
 	});
 
-	socket.on("verify email", (email_addr) => {
+	socket.on("verify email", async (email_addr) => {
 		email_addr = email_addr.trim();
 
 		if (!(email_addr && email_addr.includes("@") && email_addr.includes(".") && email_addr.length >= 7)) {
@@ -363,7 +359,7 @@ io.on("connect", (socket) => {
 			username: socket.username,
 			email_encrypted: socket.email_encrypted = cryptr.encrypt(email_addr)
 		};
-		const verification_url = `${(run_config == "dev" ? "http://"+dev_private_ip+":"+secrets.port : "https://eternity.portals.sh")}/email_verification?token=${cryptr.encrypt(socket.username + " " + socket.id)}`;
+		const verification_url = `${(run_config == "dev" ? "http://"+(await internal_ip.internalIpV4())+":"+secrets.port : "https://eternity.portals.sh")}/email_verification?token=${cryptr.encrypt(socket.username + " " + socket.id)}`;
 		email.send(obj, "verify your email", `you have requested a new eternity account and specified this email (<a href="mailto:${email_addr}">${email_addr}</a>) as contact. to continue, click this link: <a href="${verification_url}" target="_blank">${verification_url}</a>. if you did not do this, please ignore this email`);
 
 		io.to(socket.id).emit("alert", "verify", "click on the link sent to this email to verify that it's your email. check your spam folder if you don't see it. the verification must be done while this page is open, so don't close or navigate away from this page", "primary");
@@ -421,10 +417,6 @@ io.on("connect", (socket) => {
 
 app_socket.on("connect", () => {
 	console.log("connected as client to portals (localhost:1101)");
-});
-
-app_socket.on("store dev private ip", (ip) => {
-	dev_private_ip = ip;
 });
 
 app_socket.on("store other apps urls", (urls) => {
