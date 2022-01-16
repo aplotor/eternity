@@ -6,8 +6,8 @@
 		"preview": "svelte-kit preview"
 	},
 	"devDependencies": {
-		"@sveltejs/adapter-static": "^1.0.0-next.24",
-		"@sveltejs/kit": "^1.0.0-next.214",
+		"@sveltejs/adapter-static": "^1.0.0-next.26",
+		"@sveltejs/kit": "^1.0.0-next.230",
 		"svelte": "^3.44.3"
 	},
 	"dependencies": {

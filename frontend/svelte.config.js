@@ -4,11 +4,11 @@ import adapter_static from "@sveltejs/adapter-static"; // https://github.com/sve
 
 export default {
 	kit: { // https://kit.svelte.dev/docs#configuration
-		ssr: false,
 		adapter: adapter_static(), // an adapter is required to build for prod. see https://kit.svelte.dev/docs#adapters
 		files: {
 			template: "./source/app.html",
 			routes: "./source/routes/",
+			hooks: "./source/hooks.js",
 			assets: "./static/"
 		},
 		trailingSlash: "never",

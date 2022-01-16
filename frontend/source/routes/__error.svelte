@@ -1,6 +1,5 @@
 <script context="module">
 	import * as globals from "frontend/source/globals.js";
-	import Navbar from "frontend/source/components/navbar.svelte";
 
 	import * as svelte from "svelte";
 	import axios from "axios";
@@ -56,7 +55,6 @@
 	<title>{http_status}</title>
 	<meta name="description" content={http_status}/>
 </svelte:head>
-<Navbar/>
 <div class="text-center mt-5 pt-5">
 	<a href="https://www.google.com/search?q=http+status+{http_status}" target="_blank" class="display-1">{http_status}</a>
 	<br/>
