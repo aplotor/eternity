@@ -326,7 +326,7 @@
 						<a bind:this={import_anchor} href="#">import data</a>
 						<div bind:this={import_notice} class="bg-info rounded text-light text-left line_height_1 mb-2 pb-1 d-none">
 							<p class="mx-1">import data that you downloaded from <a href="https://www.reddit.com/settings/data-request" target="_blank" class="text-dark">Reddit data request</a></p>
-							<p class="mx-1">extract the zip, then select the files you want to import out of the following::</p>
+							<p class="mx-1">extract the zip, then select the file(s) you want to import out of the following::</p>
 							<ul class="mt-n3 ml-3 pl-3 pr-0">
 								<li><code class="text-dark">saved_posts.csv</code></li>
 								<li><code class="text-dark">saved_comments.csv</code></li>
