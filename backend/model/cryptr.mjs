@@ -1,5 +1,5 @@
 const backend = process.cwd();
-const run_config = (backend.toLowerCase().slice(0, 20) == "/mnt/c/users/j9108c/" ? "dev" : "prod");
+const run_config = (backend.toLowerCase().startsWith("/mnt/c/") ? "dev" : "prod");
 
 const secrets = (run_config == "dev" ? (await import(`${backend}/.secrets.mjs`)).dev : (await import(`${backend}/.secrets.mjs`)).prod);
 

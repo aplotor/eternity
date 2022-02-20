@@ -104,17 +104,25 @@
 				return;
 			}
 
-			if (evt.key == "Enter") {
-				active_search_str = evt.target.value.trim();
-				refresh_item_list();
-			}
-
-			setTimeout(() => {
-				if (active_search_str && evt.target.value.trim() == "") {
+			switch (evt.key) {
+				case "Enter":
+					active_search_str = evt.target.value.trim();
+					refresh_item_list();
+					break;
+				case "Escape":
+					evt.target.value = "";
 					active_search_str = "";
 					refresh_item_list();
-				}
-			}, 100);
+					break;
+				default:
+					setTimeout(() => {
+						if (active_search_str && evt.target.value.trim() == "") {
+							active_search_str = "";
+							refresh_item_list();
+						}
+					}, 100);
+					break;
+			}
 		});
 
 		item_list.addEventListener("scroll", (evt) => {
@@ -441,7 +449,7 @@
 				(active_data.items[item].type == active_type.slice(0, -1) && !subs.includes(active_data.items[item].sub) ? subs.push(active_data.items[item].sub) : null);
 			}
 		}
-		subs.sort();
+		subs.sort((a, b) => a.localeCompare(b, "en"));
 
 		for (const sub of subs) {
 			subreddit_select.insertAdjacentHTML("beforeend", `

@@ -10,4 +10,4 @@ bypass Reddit's 1000-item listing limits by externally storing your Reddit items
 	- import csv data from [Reddit data request](https://www.reddit.com/settings/data-request)
 	- export data as json
 
-usage video: https://www.youtube.com/watch?v=Ts7fO9wCuI0
+demo: https://www.youtube.com/watch?v=Ts7fO9wCuI0

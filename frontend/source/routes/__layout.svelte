@@ -42,12 +42,12 @@
 	svelte.onMount(() => {
 		globals_r.socket.emit("layout mounted");
 
-		globals_r.socket.on("store other apps urls", (other_apps_urls) => {
-			$globals_w.other_apps_urls = other_apps_urls;
+		globals_r.socket.on("store all apps urls", (all_apps_urls) => {
+			$globals_w.all_apps_urls = all_apps_urls;
 
 			if (location.hostname.startsWith("192.168.")) {
-				for (const app_name in other_apps_urls) {
-					$globals_w.other_apps_urls[app_name].link = other_apps_urls[app_name].link.replace("localhost", location.hostname);
+				for (const app_name in all_apps_urls) {
+					$globals_w.all_apps_urls[app_name].link = all_apps_urls[app_name].link.replace("localhost", location.hostname);
 				}
 			}
 		});
@@ -64,7 +64,7 @@
 		});
 	});
 	svelte.onDestroy(() => {
-		globals_r.socket.off("store other apps urls");
+		globals_r.socket.off("store all apps urls");
 		globals_r.socket.off("create firebase instances");
 
 		($globals_w.firebase_app ? $globals_w.firebase_app.delete().catch((err) => console.error(err)) : null);

@@ -201,7 +201,7 @@
 		<div class="form-group">
 			<div class="text-center">
 				<b><a bind:this={instruction_video_anchor} href="#">SETUP GUIDE VIDEO</a></b>
-				<span bind:this={instruction_video_wrapper} class="no_bullet embed-responsive embed-responsive-16by9 d-none"><iframe title="instruction video" class="embed-responsive-item" src="https://www.youtube.com/embed/zow7LnO2bnw" allowfullscreen></iframe></span>
+				<span bind:this={instruction_video_wrapper} class="no_bullet embed-responsive embed-responsive-16by9 d-none"><iframe title="instruction video" class="embed-responsive-item" src="https://www.youtube.com/embed/zow7LnO2bnw" allow="fullscreen"></iframe></span>
 			</div>
 			<p class="mt-4">to use eternity, you will need to go to <a href="https://console.firebase.google.com" target="_blank">Firebase console</a> and</p>
 			<ul class="line_height_1 mt-n2">

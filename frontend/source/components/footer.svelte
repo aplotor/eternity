@@ -94,8 +94,8 @@
 
 <svelte:window on:keydown={handle_window_keydown}/>
 <footer class="text-center">
-	<p class="font_size_10 m-0">released under the <a target="_blank" href="https://choosealicense.com/licenses/agpl-3.0">AGPL3 License</a> &#169; 2021–{current_year}</p>
-	<p class="font_size_10 m-0"><a href="{($globals_w.other_apps_urls ? $globals_w.other_apps_urls.portals.link : "#")}/stats">cloudflare zone stats</a></p>
+	<p class="font_size_10 m-0">released under the <a href="https://choosealicense.com/licenses/agpl-3.0" target="_blank">AGPL3 License</a> &#169; 2021–{current_year}</p>
+	<p class="font_size_10 m-0"><a href="{($globals_w.all_apps_urls ? $globals_w.all_apps_urls.portals.link : "#")}/stats" target="_blank">cloudflare zone stats</a></p>
 	<div class="btn-group dropdown">
 		<button bind:this={dropdown_btn} type="button" class="btn btn-link dropdown-toggle mt-n2 px-1 py-0" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" data-display="static"></button>
 		<div bind:this={dropdown_menu} class="dropdown-menu rounded-0 bg-light mt-n2 px-2 py-0" id="dropdown_menu">
@@ -112,7 +112,7 @@
 			<div class="dropdown-divider m-0"></div>
 			<div class="text-center mt-n1">
 				<p class="font_size_10 mt-1 mb-n2">updates in <span bind:this={countdown_wrapper}>?</span> seconds</p>
-				<a class="font_size_10" href="{($globals_w.other_apps_urls ? $globals_w.other_apps_urls.portals.link : "#")}/stats">full details</a>
+				<a class="font_size_10" href="{($globals_w.all_apps_urls ? $globals_w.all_apps_urls.portals.link : "#")}/stats">full details</a>
 			</div>
 		</div>
 	</div>

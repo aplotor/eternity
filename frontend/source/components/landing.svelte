@@ -20,7 +20,7 @@
 		<p class="lead text-left">features: new items offline auto-sync, search for items, filter by subreddit, import csv data from <a href="https://www.reddit.com/settings/data-request" target="_blank">Reddit data request</a>, export data as json</p>
 		<hr class="bg-secondary my-4"/>
 		<div class="embed-responsive embed-responsive-16by9">
-			<iframe title="usage video" class="embed-responsive-item" src="https://www.youtube.com/embed/Ts7fO9wCuI0" allowfullscreen></iframe>
+			<iframe title="demo video" class="embed-responsive-item" src="https://www.youtube-nocookie.com/embed/Ts7fO9wCuI0" allow="fullscreen"></iframe>
 		</div>
 		<hr class="bg-secondary my-4"/>
 		<p class="lead text-left">required <a href="https://www.reddit.com/dev/api/oauth" target="_blank">Reddit api oauth2 scopes</a>::</p>
