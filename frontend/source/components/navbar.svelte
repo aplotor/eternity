@@ -166,7 +166,7 @@
 			for (const category in item_fns) {
 				if (item_fns[category] && item_fns[category].length != 0) {
 					for (const fn of item_fns[category]) {
-						updates[`${category}/item_fns_to_import/${fn}`] = fn;
+						(fn.includes(".") ? null : updates[`${category}/item_fns_to_import/${fn}`] = fn); // handle possible anomaly fullnames: see thread https://www.reddit.com/r/help/comments/rztejh/saved_posts_beyond_the_1000_visible_limit
 					}
 				}
 			}
