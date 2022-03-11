@@ -9,5 +9,9 @@ bypass Reddit's 1000-item listing limits by externally storing your Reddit items
 	- unsave/delete/unvote/unhide items from Reddit directly on eternity
 	- import csv data from [Reddit data request](https://www.reddit.com/settings/data-request)
 	- export data as json
+- demo: https://www.youtube.com/watch?v=Ts7fO9wCuI0
 
-demo: https://www.youtube.com/watch?v=Ts7fO9wCuI0
+<hr/>
+
+- sponsors::
+	- [jmorlin](https://github.com/jmorlin)
