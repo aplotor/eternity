@@ -11,7 +11,7 @@
 		"svelte": "^3.46.4"
 	},
 	"dependencies": {
-		"axios": "^0.26.0",
+		"axios": "^0.26.1",
 		"firebase": "^8.10.1",
 		"socket.io-client": "^4.4.1",
 		"xlsx": "^0.17.5"

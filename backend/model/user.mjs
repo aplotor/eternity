@@ -295,10 +295,15 @@ class User {
 				listing = await this.me.getSavedContent(options);
 				break;
 			case "created": // posts, comments
-				if (type == "posts") {
-					listing = await this.me.getSubmissions(options);
-				} else if (type == "comments") {
-					listing = await this.me.getComments(options);
+				switch (type) {
+					case "posts":
+						listing = await this.me.getSubmissions(options);
+						break;
+					case "comments":
+						listing = await this.me.getComments(options);
+						break;
+					default:
+						break;
 				}
 				break;
 			case "upvoted": // posts
@@ -333,10 +338,15 @@ class User {
 						listing = await this.me.getSavedContent(options);
 						break;
 					case "created":
-						if (type == "posts") {
-							listing = await this.me.getSubmissions(options);
-						} else if (type == "comments") {
-							listing = await this.me.getComments(options);
+						switch (type) {
+							case "posts":
+								listing = await this.me.getSubmissions(options);
+								break;
+							case "comments":
+								listing = await this.me.getComments(options);
+								break;
+							default:
+								break;
 						}
 						break;
 					case "upvoted":
@@ -403,10 +413,15 @@ class User {
 			const comments = [];
 
 			for (const item of listing) {
-				if (item.constructor.name == "Submission") {
-					posts.push(item);
-				} else if (item.constructor.name == "Comment") {
-					comments.push(item);
+				switch (item.constructor.name) {
+					case "Submission":
+						posts.push(item);
+						break;
+					case "Comment":
+						comments.push(item);
+						break;
+					default:
+						break;
 				}
 			}
 	
@@ -450,67 +465,77 @@ class User {
 		let required_num_requests = null;
 		const ratelimit_remaining = this.requester.ratelimitRemaining;
 		let i = 0;
-		
-		if (type == "r/") {
-			required_num_requests = Math.ceil(subs.length / 100);
-			
-			for (; i < required_num_requests && i < ratelimit_remaining; i++) {
-				promises.push(this.requester.oauthRequest({
-					uri: "api/info", // only takes max of 100 subs at once
-					qs: {
-						sr_name: subs.slice(i*100, i*100 + 100).join(",")
-					}
-				}));
-			}
-		} else if (type == "u/") {
-			required_num_requests = subs.length;
 
-			for (; i < required_num_requests && i < ratelimit_remaining; i++) {
-				promises.push(this.requester.oauthRequest({
-					uri: `${subs[i]}/about`
-				}));
-			}
+		switch (type) {
+			case "r/":
+				required_num_requests = Math.ceil(subs.length / 100);
+			
+				for (; i < required_num_requests && i < ratelimit_remaining; i++) {
+					promises.push(this.requester.oauthRequest({
+						uri: "api/info", // only takes max of 100 subs at once
+						qs: {
+							sr_name: subs.slice(i*100, i*100 + 100).join(",")
+						}
+					}));
+				}
+				break;
+			case "u/":
+				required_num_requests = subs.length;
+
+				for (; i < required_num_requests && i < ratelimit_remaining; i++) {
+					promises.push(this.requester.oauthRequest({
+						uri: `${subs[i]}/about`
+					}));
+				}
+				break;
+			default:
+				break;
 		}
 		(i == ratelimit_remaining ? console.log(`user (${this.username}) ratelimit reached`) : null);
 
 		const responses = await Promise.all(promises);
 
-		if (type == "r/") {
-			for (const listing of responses) {
-				for (const sub of listing) {
-					const sub_name = sub.display_name_prefixed;
-					
+		switch (type) {
+			case "r/":
+				for (const listing of responses) {
+					for (const sub of listing) {
+						const sub_name = sub.display_name_prefixed;
+						
+						let sub_icon_url = "#";
+						if (sub.icon_img) {
+							sub_icon_url = sub.icon_img.split("?")[0];
+						} else if (sub.community_icon) {
+							sub_icon_url = sub.community_icon.split("?")[0];
+						}
+		
+						this.new_data[category].item_sub_icon_urls[sub_name] = sub_icon_url;
+					}
+				}
+				break;
+			case "u/":
+				for (const sub of responses) {
+					const sub_name = "u/"+sub.name;
+	
 					let sub_icon_url = "#";
 					if (sub.icon_img) {
 						sub_icon_url = sub.icon_img.split("?")[0];
+					} else if (sub.subreddit.display_name.icon_img) {
+						sub_icon_url = sub.subreddit.display_name.icon_img.split("?")[0];
 					} else if (sub.community_icon) {
 						sub_icon_url = sub.community_icon.split("?")[0];
+					} else if (sub.subreddit.display_name.community_icon) {
+						sub_icon_url = sub.subreddit.display_name.community_icon.split("?")[0];
+					} else if (sub.snoovatar_img) {
+						sub_icon_url = sub.snoovatar_img.split("?")[0];
+					} else if (sub.subreddit.display_name.snoovatar_img) {
+						sub_icon_url = sub.subreddit.display_name.snoovatar_img.split("?")[0];
 					}
 	
 					this.new_data[category].item_sub_icon_urls[sub_name] = sub_icon_url;
 				}
-			}
-		} else if (type == "u/") {
-			for (const sub of responses) {
-				const sub_name = "u/"+sub.name;
-
-				let sub_icon_url = "#";
-				if (sub.icon_img) {
-					sub_icon_url = sub.icon_img.split("?")[0];
-				} else if (sub.subreddit.display_name.icon_img) {
-					sub_icon_url = sub.subreddit.display_name.icon_img.split("?")[0];
-				} else if (sub.community_icon) {
-					sub_icon_url = sub.community_icon.split("?")[0];
-				} else if (sub.subreddit.display_name.community_icon) {
-					sub_icon_url = sub.subreddit.display_name.community_icon.split("?")[0];
-				} else if (sub.snoovatar_img) {
-					sub_icon_url = sub.snoovatar_img.split("?")[0];
-				} else if (sub.subreddit.display_name.snoovatar_img) {
-					sub_icon_url = sub.subreddit.display_name.snoovatar_img.split("?")[0];
-				}
-
-				this.new_data[category].item_sub_icon_urls[sub_name] = sub_icon_url;
-			}
+				break;
+			default:
+				break;
 		}
 	}
 	async delete_item_from_reddit_acc(item_id, item_category, item_type) {
@@ -574,10 +599,15 @@ class User {
 					listing = await me.getSavedContent(options);
 					break;
 				case "created":
-					if (item_type == "post") {
-						listing = await me.getSubmissions(options);
-					} else if (item_type == "comment") {
-						listing = await me.getComments(options);
+					switch (item_type) {
+						case "post":
+							listing = await me.getSubmissions(options);
+							break;
+						case "comment":
+							listing = await me.getComments(options);
+							break;
+						default:
+							break;
 					}
 					break;
 				case "upvoted":
