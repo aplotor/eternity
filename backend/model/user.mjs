@@ -705,78 +705,52 @@ async function update_all(io) { // synchronous one-by-one user update till all u
 	update_all_completed = false;
 
 	const all_usernames = Object.keys(usernames_to_socket_ids);
+	for (const username of all_usernames) {
+		let user = null;
+		try {
+			user = await get(username);
 
-	const async_iterable_obj = {
-		[Symbol.asyncIterator]() {
-			return {
-				i: 0,
-				next() {
-					if (this.i < all_usernames.length) {
-						return new Promise(async (resolve, reject) => {
-							let user = null;
-							try {
-								user = await get(all_usernames[this.i]);
+			if (epoch.now() - user.last_active_epoch <= 15552000) { // 6mo
+				if (user.last_updated_epoch && epoch.now() - user.last_updated_epoch >= 30) {
+					const pre_update_category_sync_info = JSON.parse(JSON.stringify(user.category_sync_info));
 
-								if (epoch.now() - user.last_active_epoch <= 15552000) { // 6mo
-									if (user.last_updated_epoch && epoch.now() - user.last_updated_epoch >= 30) {
-										const pre_update_category_sync_info = JSON.parse(JSON.stringify(user.category_sync_info));
-	
-										await user.update();
-										
-										const post_update_category_sync_info = user.category_sync_info;
-										
-										const socket_id = usernames_to_socket_ids[user.username];
-										if (socket_id) {
-											const categories_w_new_data = [];
-											for (const category in user.category_sync_info) {
-												(post_update_category_sync_info[category].latest_new_data_epoch > pre_update_category_sync_info[category].latest_new_data_epoch ? categories_w_new_data.push(category) : null);
-											}
-											(categories_w_new_data.length != 0 ? io.to(socket_id).emit("show refresh alert", categories_w_new_data) : null);
-	
-											io.to(socket_id).emit("store last updated epoch", user.last_updated_epoch);
-										}
-									}	
-								} else {
-									if (epoch.now() - user.email_notif.last_inactive_notif_epoch >= 7776000) { // 3mo
-										email.send(user, "account inactivity notice", "you have not used eternity for 6 or more consecutive months at this time. as such, your eternity account has been marked inactive and new Reddit data will not continue to sync to your database. to resolve this, log in to eternity");
-										user.email_notif.last_inactive_notif_epoch = epoch.now();
-										sql.query(`
-											update user_ 
-											set email_notif = '${JSON.stringify(user.email_notif)}' 
-											where username = '${user.username}';
-										`).catch((err) => console.error(err));
-									}
-								}
-							} catch (err) {
-								if (err != `Error: user (${all_usernames[this.i]}) dne`) {
-									console.error(err);
-									logger.error(err);
-								}
+					await user.update();
+					
+					const post_update_category_sync_info = user.category_sync_info;
+					
+					const socket_id = usernames_to_socket_ids[user.username];
+					if (socket_id) {
+						const categories_w_new_data = [];
+						for (const category in user.category_sync_info) {
+							(post_update_category_sync_info[category].latest_new_data_epoch > pre_update_category_sync_info[category].latest_new_data_epoch ? categories_w_new_data.push(category) : null);
+						}
+						(categories_w_new_data.length != 0 ? io.to(socket_id).emit("show refresh alert", categories_w_new_data) : null);
 
-								(user && user.firebase_app ? firebase.free_app(user.firebase_app).catch((err) => console.error(err)) : null);
-							} finally {
-								resolve({
-									value: this.i++,
-									done: false
-								});
-							}
-						});
-					} else {
-						update_all_completed = true;
-	
-						return Promise.resolve({
-							done: true
-						});
+						io.to(socket_id).emit("store last updated epoch", user.last_updated_epoch);
 					}
+				}	
+			} else {
+				if (epoch.now() - user.email_notif.last_inactive_notif_epoch >= 7776000) { // 3mo
+					email.send(user, "account inactivity notice", "you have not used eternity for 6 or more consecutive months at this time. as such, your eternity account has been marked inactive and new Reddit data will not continue to sync to your database. to resolve this, log in to eternity");
+					user.email_notif.last_inactive_notif_epoch = epoch.now();
+					sql.query(`
+						update user_ 
+						set email_notif = '${JSON.stringify(user.email_notif)}' 
+						where username = '${user.username}';
+					`).catch((err) => console.error(err));
 				}
-			};
+			}
+		} catch (err) {
+			if (err != `Error: user (${username}) dne`) {
+				console.error(err);
+				logger.error(err);
+			}
+			
+			(user && user.firebase_app ? firebase.free_app(user.firebase_app).catch((err) => console.error(err)) : null);
 		}
-	};
-	for await (const val of async_iterable_obj) {
-		// console.log(val);
-		null;
 	}
 
+	update_all_completed = true;
 	console.log("update all completed");
 }
 function cycle_update_all(io) {
