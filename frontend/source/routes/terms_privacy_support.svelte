@@ -33,7 +33,7 @@
 				<li class="mt-3">login is handled directly by Reddit (<a href="https://github.com/reddit-archive/reddit/wiki/OAuth2">oauth2</a>) so your password is never sent to eternity</li>
 				<li class="mt-2">eternity uses your Reddit authorization to continuously retrieve your new Reddit items, and stores them in your database using the Firebase info you provided</li>
 				<li class="mt-2">your Reddit items are stored solely in your own database, and your database is used solely for your own Reddit items</li>
-				<li class="mt-2">eternity (<a href={`mailto:${globals_r.app_name}@portals.sh`}>{`${globals_r.app_name}@portals.sh`}</a>) will only email you for notifications and updates regarding your eternity account (e.g., your account becomes inactive, your database reaches its storage limit)</li>
+				<li class="mt-2">your email is never shared, and eternity will only email you for notifications and updates regarding your eternity account (e.g., your account becomes inactive, your database reaches its storage limit)</li>
 			</ul>
 			<p class="mt-4">support</p>
 			<ul class="line_height_1 mt-n2">

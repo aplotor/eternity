@@ -128,32 +128,13 @@ class User {
 		this.firebase_app = firebase.create_app(JSON.parse(cryptr.decrypt(this.firebase_service_acc_key_encrypted)), JSON.parse(cryptr.decrypt(this.firebase_web_app_config_encrypted)).databaseURL, this.username);
 		this.firebase_db = firebase.get_db(this.firebase_app);
 
-		this.new_data = {
-			saved: {
+		this.new_data = {};
+		for (const category of ["saved", "created", "upvoted", "downvoted", "hidden", "awarded"]) {
+			this.new_data[category] = {
 				items: {},
 				item_sub_icon_urls: {}
-			},
-			created: {
-				items: {},
-				item_sub_icon_urls: {}
-			},
-			upvoted: {
-				items: {},
-				item_sub_icon_urls: {}
-			},
-			downvoted: {
-				items: {},
-				item_sub_icon_urls: {}
-			},
-			hidden: {
-				items: {},
-				item_sub_icon_urls: {}
-			},
-			awarded: {
-				items: {},
-				item_sub_icon_urls: {}
-			}
-		};
+			};
+		}
 
 		this.imported_fns_to_delete = {
 			saved: null,
@@ -174,11 +155,16 @@ class User {
 
 		const s_promise = new Promise(async (resolve, reject) => {
 			try {
-				await this.sync_category("saved", "mixed");
-				await this.import_category("saved", "mixed");
-				await this.get_new_item_icon_urls("saved");
-				(io ? io.to(socket_id).emit("update progress", ++progress, complete) : null);
-				resolve();
+				(this.firebase_app.isDeleted_ ? null : await this.sync_category("saved", "mixed"));
+				(this.firebase_app.isDeleted_ ? null : await this.import_category("saved", "mixed"));
+				(this.firebase_app.isDeleted_ ? null : await this.get_new_item_icon_urls("saved"));
+
+				if (this.firebase_app.isDeleted_) {
+					reject(`(${this.username}) update error`);
+				} else {
+					(io ? io.to(socket_id).emit("update progress", ++progress, complete) : null);
+					resolve();
+				}
 			} catch (err) {
 				reject(err);
 			}
@@ -186,14 +172,21 @@ class User {
 
 		const c_promise = new Promise(async (resolve, reject) => {
 			try {
-				await Promise.all([
-					this.sync_category("created", "posts"),
-					this.sync_category("created", "comments")
-				]);
-				await this.import_category("created", "mixed");
-				await this.get_new_item_icon_urls("created");
-				(io ? io.to(socket_id).emit("update progress", ++progress, complete) : null);
-				resolve();
+				if (!this.firebase_app.isDeleted_) {
+					await Promise.all([
+						this.sync_category("created", "posts"),
+						this.sync_category("created", "comments")
+					]);
+				}
+				(this.firebase_app.isDeleted_ ? null : await this.import_category("created", "mixed"));
+				(this.firebase_app.isDeleted_ ? null : await this.get_new_item_icon_urls("created"));
+
+				if (this.firebase_app.isDeleted_) {
+					reject(`(${this.username}) update error`);
+				} else {
+					(io ? io.to(socket_id).emit("update progress", ++progress, complete) : null);
+					resolve();
+				}
 			} catch (err) {
 				reject(err);
 			}
@@ -201,11 +194,16 @@ class User {
 		
 		const u_promise = new Promise(async (resolve, reject) => {
 			try {
-				await this.sync_category("upvoted", "posts");
-				await this.import_category("upvoted", "posts");
-				await this.get_new_item_icon_urls("upvoted");
-				(io ? io.to(socket_id).emit("update progress", ++progress, complete) : null);
-				resolve();
+				(this.firebase_app.isDeleted_ ? null : await this.sync_category("upvoted", "posts"));
+				(this.firebase_app.isDeleted_ ? null : await this.import_category("upvoted", "posts"));
+				(this.firebase_app.isDeleted_ ? null : await this.get_new_item_icon_urls("upvoted"));
+
+				if (this.firebase_app.isDeleted_) {
+					reject(`(${this.username}) update error`);
+				} else {
+					(io ? io.to(socket_id).emit("update progress", ++progress, complete) : null);
+					resolve();
+				}
 			} catch (err) {
 				reject(err);
 			}
@@ -213,11 +211,16 @@ class User {
 		
 		const d_promise = new Promise(async (resolve, reject) => {
 			try {
-				await this.sync_category("downvoted", "posts");
-				await this.import_category("downvoted", "posts");
-				await this.get_new_item_icon_urls("downvoted");
-				(io ? io.to(socket_id).emit("update progress", ++progress, complete) : null);
-				resolve();
+				(this.firebase_app.isDeleted_ ? null : await this.sync_category("downvoted", "posts"));
+				(this.firebase_app.isDeleted_ ? null : await this.import_category("downvoted", "posts"));
+				(this.firebase_app.isDeleted_ ? null : await this.get_new_item_icon_urls("downvoted"));
+
+				if (this.firebase_app.isDeleted_) {
+					reject(`(${this.username}) update error`);
+				} else {
+					(io ? io.to(socket_id).emit("update progress", ++progress, complete) : null);
+					resolve();
+				}
 			} catch (err) {
 				reject(err);
 			}
@@ -225,11 +228,16 @@ class User {
 
 		const h_promise = new Promise(async (resolve, reject) => {
 			try {
-				await this.sync_category("hidden", "posts");
-				await this.import_category("hidden", "posts");
-				await this.get_new_item_icon_urls("hidden");
-				(io ? io.to(socket_id).emit("update progress", ++progress, complete) : null);
-				resolve();
+				(this.firebase_app.isDeleted_ ? null : await this.sync_category("hidden", "posts"));
+				(this.firebase_app.isDeleted_ ? null : await this.import_category("hidden", "posts"));
+				(this.firebase_app.isDeleted_ ? null : await this.get_new_item_icon_urls("hidden"));
+
+				if (this.firebase_app.isDeleted_) {
+					reject(`(${this.username}) update error`);
+				} else {
+					(io ? io.to(socket_id).emit("update progress", ++progress, complete) : null);
+					resolve();
+				}
 			} catch (err) {
 				reject(err);
 			}
@@ -237,10 +245,15 @@ class User {
 
 		const a_promise = new Promise(async (resolve, reject) => {
 			try {
-				await this.sync_category("awarded", "mixed");
-				await this.get_new_item_icon_urls("awarded");
-				(io ? io.to(socket_id).emit("update progress", ++progress, complete) : null);
-				resolve();
+				(this.firebase_app.isDeleted_ ? null : await this.sync_category("awarded", "mixed"));
+				(this.firebase_app.isDeleted_ ? null : await this.get_new_item_icon_urls("awarded"));
+
+				if (this.firebase_app.isDeleted_) {
+					reject(`(${this.username}) update error`);
+				} else {
+					(io ? io.to(socket_id).emit("update progress", ++progress, complete) : null);
+					resolve();
+				}
 			} catch (err) {
 				reject(err);
 			}
