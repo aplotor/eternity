@@ -670,12 +670,12 @@ class User {
 }
 
 async function fill_usernames_to_socket_ids() {
-	const existing_users = await sql.query(`
-		select * from user_ 
+	const objs_arr = await sql.query(`
+		select username from user_ 
 		where reddit_api_refresh_token_encrypted is not null;
 	`);
-	for (const user of existing_users) {
-		usernames_to_socket_ids[user.username] = null;
+	for (const obj of objs_arr) {
+		usernames_to_socket_ids[obj.username] = null;
 	}
 }
 
