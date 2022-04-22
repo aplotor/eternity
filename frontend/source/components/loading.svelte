@@ -13,7 +13,7 @@
 	
 	let [
 		progress_wrapper
-	] = [null];
+	] = [];
 	svelte.onMount(() => {
 		globals_r.socket.emit("page switch", "loading");
 

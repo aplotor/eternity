@@ -423,12 +423,12 @@ app_socket.on("store all apps urls", (urls) => {
 	all_apps_urls = urls;
 });
 
-app_socket.on("update countdown", (countdown) => {
-	io.emit("update countdown", countdown);
-});
-
 app_socket.on("update domain request info", (info) => {
 	io.emit("update domain request info", domain_request_info = info);
+});
+
+app_socket.on("update countdown", (countdown) => {
+	io.emit("update countdown", countdown);
 });
 
 app_socket.connect();

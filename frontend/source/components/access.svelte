@@ -47,7 +47,7 @@
 		type_btn_group,
 		skeleton_list,
 		new_data_alert_wrapper
-	] = [null];
+	] = [];
 	svelte.onMount(async () => {
 		globals_r.socket.emit("page switch", "access");
 		

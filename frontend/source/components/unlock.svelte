@@ -25,7 +25,7 @@
 		verify_alert_wrapper,
 		save_and_continue_btn_wrapper,
 		save_and_continue_btn
-	] = [null];
+	] = [];
 	svelte.onMount(() => {
 		globals_r.socket.emit("page switch", "unlock");
 

@@ -33,7 +33,7 @@
 		redirect_notice,
 		redirect_countdown_wrapper,
 		modal
-	] = [null];
+	] = [];
 	svelte.onMount(() => {
 		if (!username) {
 			return;

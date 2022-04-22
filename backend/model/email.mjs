@@ -29,7 +29,7 @@ function send(user, subject, msg) {
 			<br/>
 			<br/>
 			<span>—</span><br/>
-			<a href=${(run_config == "dev" ? "http://localhost:" + secrets.port-1 : "https://eternity.portals.sh")} target="_blank">eternity</a>
+			<a href=${(run_config == "dev" ? "http://localhost:" + (secrets.port-1) : "https://eternity.portals.sh")} target="_blank">eternity</a>
 		`
 	};
 

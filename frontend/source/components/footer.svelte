@@ -7,24 +7,18 @@
 	const globals_w = globals.writable;
 </script>
 <script>
-	const current_year = new Date().getFullYear();
-
 	let [
 		dropdown_btn,
 		dropdown_menu,
-		countdown_wrapper,
 		last24hours_total_wrapper,
 		last7days_total_wrapper,
 		last30days_total_wrapper,
 		last24hours_list_wrapper,
 		last7days_list_wrapper,
-		last30days_list_wrapper
-	] = [null];
+		last30days_list_wrapper,
+		countdown_wrapper
+	] = [];
 	svelte.onMount(() => {
-		globals_r.socket.on("update countdown", (countdown) => {
-			countdown_wrapper.innerHTML = countdown;
-		});
-
 		globals_r.socket.on("update domain request info", (domain_request_info) => {
 			if (!domain_request_info || Object.keys(domain_request_info).length == 0) {
 				return;
@@ -43,6 +37,10 @@
 			list_domain_request_info(domain_request_info.last30days_countries, last30days_list_wrapper);
 		});
 
+		globals_r.socket.on("update countdown", (countdown) => {
+			countdown_wrapper.innerHTML = countdown;
+		});
+
 		dropdown_btn.addEventListener("click", (evt) => {
 			setTimeout(() => {
 				(!dropdown_menu.classList.contains("show") ? dropdown_btn.blur() : null);
@@ -57,8 +55,8 @@
 		});
 	});
 	svelte.onDestroy(() => {
-		globals_r.socket.off("update countdown");
 		globals_r.socket.off("update domain request info");
+		globals_r.socket.off("update countdown");
 	});
 
 	function handle_window_keydown(evt) {
@@ -94,7 +92,7 @@
 
 <svelte:window on:keydown={handle_window_keydown}/>
 <footer class="text-center">
-	<p class="font_size_10 m-0">released under the <a href="https://choosealicense.com/licenses/agpl-3.0" target="_blank">AGPL3 License</a> &#169; 2021–{current_year}</p>
+	<p class="font_size_10 m-0">released under the <a href="https://choosealicense.com/licenses/agpl-3.0" target="_blank">AGPL3 License</a> &#169; 2021+</p>
 	<p class="font_size_10 m-0"><a href="{($globals_w.all_apps_urls ? $globals_w.all_apps_urls.portals.link : "#")}/stats" target="_blank">cloudflare zone stats</a></p>
 	<div class="btn-group dropdown">
 		<button bind:this={dropdown_btn} type="button" class="btn btn-link dropdown-toggle mt-n2 px-1 py-0" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" data-display="static"></button>

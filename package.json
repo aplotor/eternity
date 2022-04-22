@@ -1,8 +1,4 @@
 {
-	"author": "jc9108",
-	"name": "eternity",
-	"repository": "github:jc9108/eternity",
-	"license": "AGPL3",
 	"scripts": {
 		"dev": "concurrently --names \"backend,frontend\" --prefix \"{name}:\" --prefix-colors \"#f2caff,#61f2f2\" \"cd ./backend/ && npm run dev\" \"wait-on tcp:1301 && cd ./frontend/ && npm run dev\"",
 		"build": "cd ./frontend/ && npm run build",
