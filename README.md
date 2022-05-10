@@ -16,3 +16,5 @@ bypass Reddit's 1000-item listing limits by externally storing your Reddit items
 
 - sponsors::
 	- [jmorlin](https://github.com/jmorlin)
+	- [jlynnes](https://github.com/jlynnes)
+	- [rickcecil](https://github.com/rickcecil)
