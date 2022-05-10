@@ -19,7 +19,7 @@ const transporter = nodemailer.createTransport({
 
 function send(user, subject, msg) {
 	const mail_options = {
-		from: `"eternity" <${secrets.app_email}>`,
+		from: '"eternity" <eternity@portals.sh>',
 		to: cryptr.decrypt(user.email_encrypted),
 		subject: subject,
 		html: `

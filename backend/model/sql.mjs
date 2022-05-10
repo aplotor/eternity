@@ -104,7 +104,6 @@ async function add_visit() {
 }
 
 export {
-	pool,
 	init_db,
 	cycle_backup_db,
 	query,

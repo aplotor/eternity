@@ -14,7 +14,7 @@ const readonly = {
 	socket: socket_io_client.io((run_config == "dev" ? `http://${(env.browser ? location.hostname : "localhost")}:1301` : ""))
 };
 
-const writable = svelte_store.writable({ // global state
+const writable = svelte_store.writable({
 	all_apps_urls: null,
 
 	firebase_app: null,

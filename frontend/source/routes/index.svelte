@@ -66,7 +66,7 @@
 
 	svelte.onMount(() => {
 		if (location.href.endsWith("/#_")) { // from reddit oauth callback
-			history.pushState(null, document.title, location.href.slice(0, -3));
+			history.pushState(null, "", location.href.slice(0, -3));
 		}
 
 		globals_r.socket.emit("navigation", "index");

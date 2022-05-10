@@ -17,10 +17,10 @@
 	<div class="jumbotron bg-dark mb-0 py-5">
 		<h1 class="display-4">{globals_r.app_name}</h1>
 		<p class="lead text-left">bypass Reddit's 1000-item listing limits by externally storing your Reddit items (saved, created, upvoted, downvoted, hidden) in your own database</p>
-		<p class="lead text-left">features: new items offline auto-sync, search for items, filter by subreddit, import csv data from <a href="https://www.reddit.com/settings/data-request" target="_blank">Reddit data request</a>, export data as json</p>
+		<p class="lead text-left">features: uses your own Firebase database (your Reddit items are never stored on eternity's server), new items offline auto-sync, search for items, filter by subreddit, import csv data from <a href="https://www.reddit.com/settings/data-request" target="_blank">Reddit data request</a>, export data as json</p>
 		<hr class="bg-secondary my-4"/>
 		<div class="embed-responsive embed-responsive-16by9">
-			<iframe title="demo video" class="embed-responsive-item" src="https://www.youtube-nocookie.com/embed/Ts7fO9wCuI0" allow="fullscreen"></iframe>
+			<iframe title="demo" class="embed-responsive-item" src="https://www.youtube.com/embed/Ts7fO9wCuI0" allow="fullscreen"></iframe>
 		</div>
 		<hr class="bg-secondary my-4"/>
 		<p class="lead text-left">required <a href="https://www.reddit.com/dev/api/oauth" target="_blank">Reddit api oauth2 scopes</a>::</p>
