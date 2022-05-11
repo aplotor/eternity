@@ -20,7 +20,7 @@
 		<p class="lead text-left">features: uses your own Firebase database (your Reddit items are never stored on eternity's server), new items offline auto-sync, search for items, filter by subreddit, import csv data from <a href="https://www.reddit.com/settings/data-request" target="_blank">Reddit data request</a>, export data as json</p>
 		<hr class="bg-secondary my-4"/>
 		<div class="embed-responsive embed-responsive-16by9">
-			<iframe title="demo" class="embed-responsive-item" src="https://www.youtube.com/watch?v=4pxXM98ewIc" allow="fullscreen"></iframe>
+			<iframe title="demo" class="embed-responsive-item" src="https://www.youtube.com/embed/4pxXM98ewIc" allow="fullscreen"></iframe>
 		</div>
 		<hr class="bg-secondary my-4"/>
 		<p class="lead text-left">required <a href="https://www.reddit.com/dev/api/oauth" target="_blank">Reddit api oauth2 scopes</a>::</p>
