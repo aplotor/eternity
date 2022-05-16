@@ -169,19 +169,26 @@ app.get("/authentication_check", (req, res) => {
 });
 
 app.get("/email_verification", (req, res) => {
-	const encrypted_token = req.query.token;
-	const decrypted_token = cryptr.decrypt(encrypted_token);
+	try {
+		const encrypted_token = req.query.token;
+		const decrypted_token = cryptr.decrypt(encrypted_token); // will throw err if invalid token
+	
+		const username_from_token = decrypted_token.split(" ")[0];
+		const socket_id_from_token = decrypted_token.split(" ")[1];
+	
+		if (user.usernames_to_socket_ids[username_from_token] && user.socket_ids_to_usernames[socket_id_from_token]) {
+			io.to(socket_id_from_token).emit("emit back encrypted token", encrypted_token);
+			res.send("ok");
+			console.log(`email verification (${username_from_token}) ok`);
+		} else {
+			res.send("fail");
+			console.log(`email verification (${username_from_token}) fail`);
+		}
+	} catch (err) {
+		(err != "Error: Unsupported state or unable to authenticate data" ? console.error(err) : null);
 
-	const username_from_token = decrypted_token.split(" ")[0];
-	const socket_id_from_token = decrypted_token.split(" ")[1];
-
-	if (user.usernames_to_socket_ids[username_from_token] && user.socket_ids_to_usernames[socket_id_from_token]) {
-		io.to(socket_id_from_token).emit("emit back encrypted token", encrypted_token);
-		res.send("ok");
-		console.log(`email verification (${username_from_token}) ok`);
-	} else {
 		res.send("fail");
-		console.log(`email verification (${username_from_token}) fail`);
+		console.log(`email verification attempt failed`);
 	}
 });
 
