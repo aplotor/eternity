@@ -7,22 +7,7 @@
 		"prod_restart": "pm2 restart ./controller/server.mjs"
 	},
 	"devDependencies": {
-		"axios": "^0.26.1",
-		"cookie-session": "^1.4.0",
-		"cryptr": "^6.0.3",
-		"express": "^4.18.1",
-		"express-fileupload": "^1.4.0",
-		"firebase-admin": "^10.2.0",
-		"internal-ip": "^7.0.0",
-		"nodemailer": "^6.7.5",
-		"nodemon": "^2.0.16",
-		"passport": "^0.4.1",
-		"passport-reddit": "^0.2.4",
-		"pg": "^8.7.3",
-		"snoowrap": "^1.23.0",
-		"socket.io": "^4.5.1",
-		"socket.io-client": "^4.5.1",
-		"winston": "^3.7.2"
+		"nodemon": "^2.0.16"
 	},
 	"dependencies": {
 		"axios": "^0.26.1",
