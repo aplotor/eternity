@@ -6,14 +6,18 @@
 		"preview": "svelte-kit preview"
 	},
 	"devDependencies": {
-		"@sveltejs/adapter-static": "^1.0.0-next.28",
-		"@sveltejs/kit": "^1.0.0-next.265",
-		"svelte": "^3.46.4"
+		"@sveltejs/adapter-static": "^1.0.0-next.34",
+		"@sveltejs/kit": "^1.0.0-next.349",
+		"axios": "^0.26.1",
+		"firebase": "^8.10.1",
+		"socket.io-client": "^4.5.1",
+		"svelte": "^3.48.0",
+		"xlsx": "^0.17.5"
 	},
 	"dependencies": {
 		"axios": "^0.26.1",
 		"firebase": "^8.10.1",
-		"socket.io-client": "^4.4.1",
+		"socket.io-client": "^4.5.1",
 		"xlsx": "^0.17.5"
 	}
 }

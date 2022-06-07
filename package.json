@@ -4,7 +4,7 @@
 		"build": "cd ./frontend/ && npm run build",
 		"prod_start": "cd ./backend/ && npm run prod_start",
 		"prod_stop": "cd ./backend/ && npm run prod_stop",
-		"prod_update": "npm run prod_stop && git reset --hard && git pull && (cd ./frontend/ && npm install) && (cd ./backend/ && npm install) && npm run build && npm run prod_start"
+		"prod_update": "npm run prod_stop && git reset --hard && git pull && (cd ./backend/ && npm install) && (cd ./frontend/ && npm install) && npm run build && npm run prod_start"
 	},
 	"devDependencies": {
 		"concurrently": "^6.5.1",
