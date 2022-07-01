@@ -37,7 +37,10 @@
 			</ul>
 			<p class="mt-4">support</p>
 			<ul class="line_height_1 mt-n2">
-				<li class="mt-3">support email: <a href={`mailto:${globals_r.app_name}@portals.sh`}>{`${globals_r.app_name}@portals.sh`}</a></li>
+				<li class="mt-3">please don't chat/dm me on Reddit for eternity support. it will NOT be answered. instead, use one of the following methods</li>
+				<li class="mt-2">issue tracker: <a href={`${globals_r.repo}/issues`}>{`${globals_r.repo}/issues`}</a></li>
+				<li class="mt-2">general questions: <a href={`${globals_r.repo}/discussions/categories/q-a`}>{`${globals_r.repo}/discussions/categories/q-a`}</a></li>
+				<li class="mt-2">private questions: email <a href={`mailto:${globals_r.app_name}@portals.sh`}>{`${globals_r.app_name}@portals.sh`}</a></li>
 			</ul>
 		</div>
 	</div>
