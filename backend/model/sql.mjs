@@ -34,19 +34,6 @@ async function init_db() {
 	}
 
 	await client.query(`
-		create table if not exists visit (
-			id int primary key, 
-			count int not null
-		);
-	`);
-	console.log("created table (visit) if not exist");
-	await client.query(`
-		insert into visit 
-		values (0, 0) 
-		on conflict do nothing;
-	`);
-
-	await client.query(`
 		create table if not exists user_ (
 			username text primary key, 
 			reddit_api_refresh_token_encrypted text, -- decrypt ➔ string
@@ -95,17 +82,8 @@ async function query(query) {
 	return rows;
 }
 
-async function add_visit() {
-	await query(`
-		update visit 
-		set count = count+1 
-		where id = 0;
-	`);
-}
-
 export {
 	init_db,
 	cycle_backup_db,
-	query,
-	add_visit
+	query
 };

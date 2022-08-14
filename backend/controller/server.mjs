@@ -250,8 +250,6 @@ io.on("connect", (socket) => {
 			default:
 				break;
 		}
-
-		sql.add_visit().catch((err) => console.error(err));
 	});
 
 	socket.on("page switch", async (page) => {
@@ -432,10 +430,6 @@ app_socket.on("store all apps urls", (urls) => {
 
 app_socket.on("update domain request info", (info) => {
 	io.emit("update domain request info", domain_request_info = info);
-});
-
-app_socket.on("update countdown", (countdown) => {
-	io.emit("update countdown", countdown);
 });
 
 app_socket.connect();

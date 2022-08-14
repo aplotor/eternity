@@ -15,8 +15,7 @@
 		last30days_total_wrapper,
 		last24hours_list_wrapper,
 		last7days_list_wrapper,
-		last30days_list_wrapper,
-		countdown_wrapper
+		last30days_list_wrapper
 	] = [];
 	svelte.onMount(() => {
 		globals_r.socket.on("update domain request info", (domain_request_info) => {
@@ -37,10 +36,6 @@
 			list_domain_request_info(domain_request_info.last30days_countries, last30days_list_wrapper);
 		});
 
-		globals_r.socket.on("update countdown", (countdown) => {
-			countdown_wrapper.innerHTML = countdown;
-		});
-
 		dropdown_btn.addEventListener("click", (evt) => {
 			setTimeout(() => {
 				(!dropdown_menu.classList.contains("show") ? dropdown_btn.blur() : null);
@@ -56,7 +51,6 @@
 	});
 	svelte.onDestroy(() => {
 		globals_r.socket.off("update domain request info");
-		globals_r.socket.off("update countdown");
 	});
 
 	function handle_body_keydown(evt) {
@@ -109,8 +103,7 @@
 			<ul bind:this={last30days_list_wrapper} class="m-0"></ul>
 			<div class="dropdown-divider m-0"></div>
 			<div class="text-center mt-n1">
-				<p class="font_size_10 mt-1 mb-n2">updates in <span bind:this={countdown_wrapper}>?</span> seconds</p>
-				<a class="font_size_10" href="{($globals_w.all_apps_urls ? $globals_w.all_apps_urls.portals.link : "#")}/stats">full details</a>
+				<a class="font_size_10" href="{($globals_w.all_apps_urls ? $globals_w.all_apps_urls.portals.link : "#")}/stats" target="_blank">full details</a>
 			</div>
 		</div>
 	</div>
