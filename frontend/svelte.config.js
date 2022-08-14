@@ -5,7 +5,9 @@ export default { // https://kit.svelte.dev/docs/configuration
 		".svelte"
 	],
 	kit: {
-		adapter: adapter_static(), // an adapter is required to build for prod. see https://kit.svelte.dev/docs/adapters
+		adapter: adapter_static({
+			fallback: true
+		}), // an adapter is required to build for prod. see https://kit.svelte.dev/docs/adapters
 		files: {
 			template: "./source/app.html",
 			routes: "./source/routes/",
