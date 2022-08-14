@@ -30,7 +30,7 @@
 		} catch (err) {
 			console.error(err);
 
-			if (parseInt(err.message.split(" ").slice(-1)[0]) == 401) { // backend deserializeUser error
+			if (Number.parseInt(err.message.split(" ").slice(-1)[0]) == 401) { // backend deserializeUser error
 				return {
 					status: 401
 				};
@@ -65,8 +65,8 @@
 	}
 
 	svelte.onMount(() => {
-		if (location.href.endsWith("/#_")) { // from reddit oauth callback
-			history.pushState(null, "", location.href.slice(0, -3));
+		if (window.location.href.endsWith("/#_")) { // from reddit oauth callback
+			window.history.pushState(null, "", window.location.href.slice(0, -3));
 		}
 
 		globals_r.socket.emit("navigation", "index");

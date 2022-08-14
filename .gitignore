@@ -2,9 +2,9 @@
 **/.*
 **/#*
 **/node_modules/
-frontend/build/
 backend/tempfiles/
 backend/logs/
+frontend/build/
 
 # keep
 !.git*

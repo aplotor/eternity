@@ -45,9 +45,9 @@
 		globals_r.socket.on("store all apps urls", (all_apps_urls) => {
 			$globals_w.all_apps_urls = all_apps_urls;
 
-			if (location.hostname.startsWith("192.168.")) {
+			if (window.location.hostname.startsWith("192.168.")) {
 				for (const app_name in all_apps_urls) {
-					$globals_w.all_apps_urls[app_name].link = all_apps_urls[app_name].link.replace("localhost", location.hostname);
+					$globals_w.all_apps_urls[app_name].link = all_apps_urls[app_name].link.replace("localhost", window.location.hostname);
 				}
 			}
 		});

@@ -227,7 +227,7 @@
 		});
 	});
 
-	function handle_window_click(evt) {
+	function handle_body_click(evt) {
 		if (!username) {
 			return;
 		}
@@ -240,7 +240,7 @@
 		}, 100);
 	}
 
-	function handle_window_keydown(evt) {
+	function handle_body_keydown(evt) {
 		if (!username) {
 			return;
 		}
@@ -293,7 +293,7 @@
 
 			if (response_data == "success") {
 				setTimeout(() => {
-					location.reload();
+					window.location.reload();
 				}, 10000);
 				
 				purge_spinner_container.classList.toggle("d-none");
@@ -312,7 +312,7 @@
 	}
 </script>
 
-<svelte:window on:click={handle_window_click} on:keydown={handle_window_keydown}/>
+<svelte:body on:click={handle_body_click} on:keydown={handle_body_keydown}/>
 <nav class="mt-5 px-5">
 	{#if username}
 		<span class="float-right">

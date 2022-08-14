@@ -7,7 +7,7 @@
 	const globals_r = globals.readonly;
 
 	function ensure_redirect(current_path) {
-		(current_path == "/" ? history.pushState(null, "", "/error") : null); // if current path is already index, change the path so that "return to app" will actually redirect to index
+		(current_path == "/" ? window.history.pushState(null, "", "/error") : null); // if current path is already index, change the path so that "return to app" will actually redirect to index
 	}
 
 	export async function load(obj) {
@@ -36,7 +36,7 @@
 
 				return {
 					props: {
-						http_status: parseInt(err.message.split(" ").slice(-1)[0])
+						http_status: Number.parseInt(err.message.split(" ").slice(-1)[0])
 					}
 				};
 			}

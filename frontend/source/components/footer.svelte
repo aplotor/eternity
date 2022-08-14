@@ -59,7 +59,7 @@
 		globals_r.socket.off("update countdown");
 	});
 
-	function handle_window_keydown(evt) {
+	function handle_body_keydown(evt) {
 		if (evt.key == "Escape") {
 			setTimeout(() => {
 				(!dropdown_menu.classList.contains("show") ? dropdown_btn.blur() : null);
@@ -90,7 +90,7 @@
 	}
 </script>
 
-<svelte:window on:keydown={handle_window_keydown}/>
+<svelte:body on:keydown={handle_body_keydown}/>
 <footer class="text-center">
 	<p class="font_size_10 m-0">released under the <a href="https://choosealicense.com/licenses/agpl-3.0" target="_blank">AGPL3 License</a> &#169; 2021+</p>
 	<p class="font_size_10 m-0"><a href="{($globals_w.all_apps_urls ? $globals_w.all_apps_urls.portals.link : "#")}/stats" target="_blank">cloudflare zone stats</a></p>

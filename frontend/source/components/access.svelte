@@ -136,7 +136,7 @@
 		globals_r.socket.off("show refresh alert");
 	});
 
-	async function handle_window_click(evt) {
+	async function handle_body_click(evt) {
 		(evt.target.classList.contains("dropdown-item") || evt.target.parentElement && evt.target.parentElement.classList.contains("dropdown-item") ? subreddit_select_btn.blur() : null);
 
 		if (evt.target.dataset && evt.target.dataset.url) {
@@ -147,7 +147,7 @@
 
 		if (evt.target.classList.contains("copy_link_btn")) {
 			try {
-				await navigator.clipboard.writeText(evt.target.parentElement.dataset.url);
+				await window.navigator.clipboard.writeText(evt.target.parentElement.dataset.url);
 				evt.target.classList.remove("btn-outline-secondary");
 				evt.target.classList.add("btn-success");
 				setTimeout(() => {
@@ -228,13 +228,15 @@
 		}
 
 		if (evt.target.parentElement == category_btn_group) {
-			const selected_category = await new Promise((resolve, reject) => setTimeout(() => {
-				let category = null;
-				for (const btn of [...category_btn_group.children]) {
-					(btn.classList.contains("active") ? category = btn.innerText : null);
-				}
-				resolve(category);
-			}, 100));
+			const selected_category = await new Promise((resolve, reject) => {
+				setTimeout(() => {
+					let category = null;
+					for (const btn of [...(category_btn_group.children)]) {
+						(btn.classList.contains("active") ? category = btn.innerText : null);
+					}
+					resolve(category);
+				}, 100);
+			});
 			if (selected_category != active_category) {
 				active_category = selected_category;
 				show_skeleton_loading();
@@ -248,13 +250,15 @@
 				fill_subreddit_select();
 			}
 		} else if (evt.target.parentElement == type_btn_group) {
-			const selected_type = await new Promise((resolve, reject) => setTimeout(() => {
-				let type = null;
-				for (const btn of [...type_btn_group.children]) {
-					(btn.classList.contains("active") ? type = btn.innerText : null);
-				}
-				resolve(type);
-			}, 100));
+			const selected_type = await new Promise((resolve, reject) => {
+				setTimeout(() => {
+					let type = null;
+					for (const btn of [...(type_btn_group.children)]) {
+						(btn.classList.contains("active") ? type = btn.innerText : null);
+					}
+					resolve(type);
+				}, 100);
+			});
 			if (selected_type != active_type) {
 				active_type = selected_type;
 				refresh_item_list();
@@ -276,7 +280,7 @@
 		}
 	}
 
-	function handle_window_keydown(evt) {
+	function handle_body_keydown(evt) {
 		if (evt.key == "Escape") {
 			jQuery("[data-toggle='popover']").popover("hide");
 		}
@@ -461,7 +465,7 @@
 	}
 </script>
 
-<svelte:window on:click={handle_window_click} on:keydown={handle_window_keydown}/>
+<svelte:body on:click={handle_body_click} on:keydown={handle_body_keydown}/>
 <Navbar username={username} show_data_anchors={true}/>
 <div class="text-center mt-3">
 	<h1 class="display-4">{globals_r.app_name}</h1>

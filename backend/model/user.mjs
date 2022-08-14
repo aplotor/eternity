@@ -692,8 +692,8 @@ async function get(username, existence_check=false) {
 	} else {
 		const plain_object = rows[0];
 		// console.log(plain_object);
-		(plain_object.last_updated_epoch ? plain_object.last_updated_epoch = parseInt(plain_object.last_updated_epoch) : null);
-		plain_object.last_active_epoch = parseInt(plain_object.last_active_epoch);
+		(plain_object.last_updated_epoch ? plain_object.last_updated_epoch = Number.parseInt(plain_object.last_updated_epoch) : null);
+		plain_object.last_active_epoch = Number.parseInt(plain_object.last_active_epoch);
 	
 		const user = Object.assign(new User(null, null, true), plain_object);
 		return user;

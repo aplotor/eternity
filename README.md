@@ -3,7 +3,8 @@
 bypass Reddit's 1000-item listing limits by externally storing your Reddit items (saved, created, upvoted, downvoted, hidden) in your own database
 
 - features::
-	- new items offline auto-sync
+	- new items auto-sync
+	- synced items not affected by Reddit deletion
 	- search for items
 	- filter by subreddit
 	- unsave/delete/unvote/unhide items from Reddit directly on eternity
