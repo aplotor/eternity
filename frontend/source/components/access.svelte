@@ -82,17 +82,19 @@
 			await get_parse_set_data();
 			refresh_item_list();
 			hide_skeleton_loading();
+			update_search_placeholder();
 			fill_subreddit_select();
 		} catch (err) {
 			console.error(err);
 		}
 
 		jQuery(subreddit_select).selectpicker();
-		subreddit_select_btn = document.getElementsByClassName("bs-placeholder")[0];
-		subreddit_select_dropdown = document.getElementsByClassName("bootstrap-select")[0];
+		subreddit_select_btn = document.querySelector(".bs-placeholder");
+		subreddit_select_dropdown = document.querySelector(".bootstrap-select");
 
 		jQuery(subreddit_select).on("changed.bs.select", (evt, clicked_index, is_selected, previous_value) => { // https://developer.snapappointments.com/bootstrap-select/options/#events
 			refresh_item_list();
+			update_search_placeholder();
 		});
 
 		subreddit_select_btn.addEventListener("click", (evt) => {
@@ -162,15 +164,15 @@
 		if (evt.target.classList.contains("delete_btn")) {
 			const item_id = evt.target.parentElement.id;
 
-			const all_opened_popovers = document.getElementsByClassName("popover");
-			for (const popover of [...all_opened_popovers]) {
+			const all_opened_popovers = document.querySelectorAll(".popover");
+			for (const popover of all_opened_popovers) {
 				const popover_item_id = popover.children[2].children[0].classList[0];
 				
 				(popover_item_id != item_id ? jQuery(popover).popover("hide") : null);
 			}
 		} else if (evt.target.classList.contains("row_1_popover_btn")) {
-			const all_row_1_popover_btns = document.getElementsByClassName("row_1_popover_btn");
-			for (const btn of [...all_row_1_popover_btns]) {
+			const all_row_1_popover_btns = document.querySelectorAll(".row_1_popover_btn");
+			for (const btn of all_row_1_popover_btns) {
 				if (btn != evt.target) {
 					(btn.classList.contains("active") ? btn.classList.remove("active") : null);
 				} else {
@@ -178,11 +180,11 @@
 				}
 			}
 		} else if (evt.target.classList.contains("delete_item_confirm_btn")) {
-			const opened_popover = document.getElementsByClassName("popover")[0];
+			const opened_popover = document.querySelector(".popover");
 
 			let delete_from = null;
-			const all_row_1_popover_btns = document.getElementsByClassName("row_1_popover_btn");
-			for (const btn of [...all_row_1_popover_btns]) {
+			const all_row_1_popover_btns = document.querySelectorAll(".row_1_popover_btn");
+			for (const btn of all_row_1_popover_btns) {
 				(btn.classList.contains("active") ? delete_from = btn.innerHTML : null);
 			}
 			if (!delete_from) {
@@ -196,11 +198,11 @@
 
 			const item_id = evt.target.parentElement.parentElement.classList[0];
 			const item_category = active_category;
-			const item_type = document.getElementById(item_id).dataset.type;
+			const item_type = document.querySelector(`#${item_id}`).dataset.type;
 			// console.log(item_id, item_category, item_type);
 
 			if (delete_from == "eternity" || delete_from == "both") {
-				const list_item = document.getElementById(item_id);
+				const list_item = document.querySelector(`#${item_id}`);
 				list_item.innerHTML = "";
 				list_item.removeAttribute("data-url");
 				list_item.removeAttribute("data-type");
@@ -221,7 +223,7 @@
 			if (delete_from == "Reddit" || delete_from == "both") {
 				globals_r.socket.emit("delete item from reddit acc", item_id, item_category, item_type);
 			}
-		} else if (!evt.target.classList.contains("row_2_popover_btn") && document.getElementsByClassName("popover")[0] && document.getElementsByClassName("popover")[0].contains(evt.target)) {
+		} else if (!evt.target.classList.contains("row_2_popover_btn") && document.querySelector(".popover") && document.querySelector(".popover").contains(evt.target)) {
 			null;
 		} else {
 			jQuery("[data-toggle='popover']").popover("hide");
@@ -247,6 +249,7 @@
 				}
 				refresh_item_list();
 				hide_skeleton_loading();
+				update_search_placeholder();
 				fill_subreddit_select();
 			}
 		} else if (evt.target.parentElement == type_btn_group) {
@@ -262,6 +265,7 @@
 			if (selected_type != active_type) {
 				active_type = selected_type;
 				refresh_item_list();
+				update_search_placeholder();
 				fill_subreddit_select();
 			}
 		}
@@ -276,6 +280,7 @@
 			}
 			refresh_item_list();
 			hide_skeleton_loading();
+			update_search_placeholder();
 			fill_subreddit_select();
 		}
 	}
@@ -286,7 +291,7 @@
 		}
 		
 		setTimeout(() => {
-			const no_results = document.getElementsByClassName("no-results")[0];
+			const no_results = document.querySelector(".no-results");
 			(no_results && !no_results.classList.contains("d-none") ? no_results.classList.add("d-none") : null);
 
 			(typeof subreddit_select_dropdown != "number" && !subreddit_select_dropdown.classList.contains("show") ? subreddit_select_btn.blur() : null);
@@ -431,13 +436,17 @@
 				</div>
 			`);
 
-			(items_currently_listed == x-Math.floor(count/2)-1 ? observer.observe(document.getElementById(item_id)) : null);
+			(items_currently_listed == x-Math.floor(count/2)-1 ? observer.observe(document.querySelector(`#${item_id}`)) : null);
 
 			jQuery('[data-toggle="tooltip"]').tooltip("enable");
 			jQuery('[data-toggle="popover"]').popover("enable");
 
 			items_currently_listed++;
 		}
+	}
+
+	function update_search_placeholder() {
+		search_input.placeholder = `search ${active_item_ids.length} item${(active_item_ids.length == 1 ? "" : "s")}`;
 	}
 
 	function fill_subreddit_select() {
@@ -493,7 +502,7 @@
 			</div>
 			<div class="form-row mt-2">
 				<div class="form-group col-12 col-sm-8 mb-0">
-					<input bind:this={search_input} type="text" class="form-control bg-light" placeholder="search"/>
+					<input bind:this={search_input} type="text" class="form-control bg-light" placeholder="search ? items"/>
 				</div>
 				<div class="form-group col-12 col-sm-4 mb-0">
 					<select bind:this={subreddit_select} class="selectpicker form-control" data-width="false" data-size="10" data-live-search="true" title="in subreddit: all">
