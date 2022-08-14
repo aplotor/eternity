@@ -40,6 +40,7 @@
 	let [
 		last_updated_wrapper,
 		search_input,
+		search_btn,
 		subreddit_select,
 		subreddit_select_btn,
 		subreddit_select_dropdown,
@@ -127,11 +128,15 @@
 			}
 		});
 
+		search_btn.addEventListener("click", (evt) => {
+			search_input.dispatchEvent(new KeyboardEvent("keydown", {
+				key: "Enter"
+			}));
+		});
+
 		item_list.addEventListener("scroll", (evt) => {
 			jQuery("[data-toggle='popover']").popover("hide");
 		});
-
-		
 	});
 	svelte.onDestroy(() => {
 		globals_r.socket.off("store last updated epoch");
@@ -502,7 +507,10 @@
 			</div>
 			<div class="form-row mt-2">
 				<div class="form-group col-12 col-sm-8 mb-0">
-					<input bind:this={search_input} type="text" class="form-control bg-light" placeholder="search ? items"/>
+					<div class="d-flex input-group">
+						<input bind:this={search_input} type="text" class="form-control bg-light" placeholder="search ? items"/>
+						<div class="input-group-append"><button bind:this={search_btn} type="button" class="btn btn-light shadow-none"><i class="fa fa-search"></i></button></div>
+					</div>
 				</div>
 				<div class="form-group col-12 col-sm-4 mb-0">
 					<select bind:this={subreddit_select} class="selectpicker form-control" data-width="false" data-size="10" data-live-search="true" title="in subreddit: all">
