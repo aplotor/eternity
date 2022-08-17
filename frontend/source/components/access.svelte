@@ -102,6 +102,166 @@
 			update_search_placeholder();
 		});
 
+		document.body.addEventListener("click", async (evt) => {
+			(evt.target.classList.contains("dropdown-item") || evt.target.parentElement && evt.target.parentElement.classList.contains("dropdown-item") ? subreddit_select_btn.blur() : null);
+
+			if (evt.target.dataset && evt.target.dataset.url) {
+				window.open(evt.target.dataset.url, "_blank");
+			} else if (evt.target.parentElement && evt.target.parentElement.dataset && evt.target.parentElement.dataset.url && evt.target.tagName != "BUTTON") {
+				window.open(evt.target.parentElement.dataset.url, "_blank");
+			}
+
+			if (evt.target.classList.contains("copy_link_btn")) {
+				try {
+					await window.navigator.clipboard.writeText(evt.target.parentElement.dataset.url);
+					evt.target.classList.remove("btn-outline-secondary");
+					evt.target.classList.add("btn-success");
+					setTimeout(() => {
+						evt.target.classList.remove("btn-success");
+						evt.target.classList.add("btn-outline-secondary");
+					}, 500);
+				} catch (err) {
+					console.error(err);
+				}
+			}
+
+			if (evt.target.classList.contains("delete_btn")) {
+				const item_id = evt.target.parentElement.id;
+
+				const all_opened_popovers = document.querySelectorAll(".popover");
+				for (const popover of all_opened_popovers) {
+					const popover_item_id = popover.children[2].children[0].classList[0];
+					
+					(popover_item_id != item_id ? jQuery(popover).popover("hide") : null);
+				}
+			} else if (evt.target.classList.contains("row_1_popover_btn")) {
+				const all_row_1_popover_btns = document.querySelectorAll(".row_1_popover_btn");
+				for (const btn of all_row_1_popover_btns) {
+					if (btn != evt.target) {
+						(btn.classList.contains("active") ? btn.classList.remove("active") : null);
+					} else {
+						btn.classList.toggle("active");
+					}
+				}
+			} else if (evt.target.classList.contains("delete_item_confirm_btn")) {
+				const opened_popover = document.querySelector(".popover");
+
+				let delete_from = null;
+				const all_row_1_popover_btns = document.querySelectorAll(".row_1_popover_btn");
+				for (const btn of all_row_1_popover_btns) {
+					(btn.classList.contains("active") ? delete_from = btn.innerHTML : null);
+				}
+				if (!delete_from) {
+					for (const btn of [...all_row_1_popover_btns]) {
+						utils.shake_element(btn);
+					}
+					return;
+				} else {
+					jQuery(opened_popover).popover("hide");
+				}
+
+				const item_id = evt.target.parentElement.parentElement.classList[0];
+				const item_category = active_category;
+				const item_type = document.querySelector(`#${item_id}`).dataset.type;
+				// console.log(item_id, item_category, item_type);
+
+				if (delete_from == "eternity" || delete_from == "both") {
+					const list_item = document.querySelector(`#${item_id}`);
+					list_item.innerHTML = "";
+					list_item.removeAttribute("data-url");
+					list_item.removeAttribute("data-type");
+					list_item.className = "";
+					list_item.classList.add("skeleton_item", "rounded", "mb-2");
+
+					try {
+						const ref = $globals_w.firebase_db.ref(`${item_category}/items/${item_id}`);
+						await ref.remove();
+
+						list_item.remove();
+						active_item_ids.splice(active_item_ids.indexOf(item_id), 1);
+						delete active_data.items[item_id];
+					} catch (err) {
+						console.error(err);
+					}
+				}
+				if (delete_from == "Reddit" || delete_from == "both") {
+					globals_r.socket.emit("delete item from reddit acc", item_id, item_category, item_type);
+				}
+			} else if (!evt.target.classList.contains("row_2_popover_btn") && document.querySelector(".popover") && document.querySelector(".popover").contains(evt.target)) {
+				null;
+			} else {
+				jQuery("[data-toggle='popover']").popover("hide");
+			}
+
+			if (evt.target.parentElement == category_btn_group) {
+				const selected_category = await new Promise((resolve, reject) => {
+					setTimeout(() => {
+						let category = null;
+						for (const btn of [...(category_btn_group.children)]) {
+							(btn.classList.contains("active") ? category = btn.innerText : null);
+						}
+						resolve(category);
+					}, 100);
+				});
+				if (selected_category != active_category) {
+					active_category = selected_category;
+					show_skeleton_loading();
+					try {
+						await get_parse_set_data();
+					} catch (err) {
+						console.error(err);
+					}
+					refresh_item_list();
+					hide_skeleton_loading();
+					update_search_placeholder();
+					fill_subreddit_select();
+				}
+			} else if (evt.target.parentElement == type_btn_group) {
+				const selected_type = await new Promise((resolve, reject) => {
+					setTimeout(() => {
+						let type = null;
+						for (const btn of [...(type_btn_group.children)]) {
+							(btn.classList.contains("active") ? type = btn.innerText : null);
+						}
+						resolve(type);
+					}, 100);
+				});
+				if (selected_type != active_type) {
+					active_type = selected_type;
+					refresh_item_list();
+					update_search_placeholder();
+					fill_subreddit_select();
+				}
+			}
+
+			if (evt.target.id == "refresh_btn") {
+				new_data_alert_wrapper.classList.add("d-none");
+				show_skeleton_loading();
+				try {
+					await get_parse_set_data();
+				} catch (err) {
+					console.error(err);
+				}
+				refresh_item_list();
+				hide_skeleton_loading();
+				update_search_placeholder();
+				fill_subreddit_select();
+			}
+		});
+
+		document.body.addEventListener("keydown", (evt) => {
+			if (evt.key == "Escape") {
+				jQuery("[data-toggle='popover']").popover("hide");
+			}
+			
+			setTimeout(() => {
+				const no_results = document.querySelector(".no-results");
+				(no_results && !no_results.classList.contains("d-none") ? no_results.classList.add("d-none") : null);
+
+				(typeof subreddit_select_dropdown != "number" && !subreddit_select_dropdown.classList.contains("show") ? subreddit_select_btn.blur() : null);
+			}, 100);
+		});
+		
 		last_updated_wrapper_1.addEventListener("click", (evt) => {
 			last_updated_wrapper_2.classList.toggle("d-none");
 		});
@@ -154,166 +314,6 @@
 		globals_r.socket.off("store last updated epoch");
 		globals_r.socket.off("show refresh alert");
 	});
-
-	async function handle_body_click(evt) {
-		(evt.target.classList.contains("dropdown-item") || evt.target.parentElement && evt.target.parentElement.classList.contains("dropdown-item") ? subreddit_select_btn.blur() : null);
-
-		if (evt.target.dataset && evt.target.dataset.url) {
-			window.open(evt.target.dataset.url, "_blank");
-		} else if (evt.target.parentElement && evt.target.parentElement.dataset && evt.target.parentElement.dataset.url && evt.target.tagName != "BUTTON") {
-			window.open(evt.target.parentElement.dataset.url, "_blank");
-		}
-
-		if (evt.target.classList.contains("copy_link_btn")) {
-			try {
-				await window.navigator.clipboard.writeText(evt.target.parentElement.dataset.url);
-				evt.target.classList.remove("btn-outline-secondary");
-				evt.target.classList.add("btn-success");
-				setTimeout(() => {
-					evt.target.classList.remove("btn-success");
-					evt.target.classList.add("btn-outline-secondary");
-				}, 500);
-			} catch (err) {
-				console.error(err);
-			}
-		}
-		
-		if (evt.target.classList.contains("delete_btn")) {
-			const item_id = evt.target.parentElement.id;
-
-			const all_opened_popovers = document.querySelectorAll(".popover");
-			for (const popover of all_opened_popovers) {
-				const popover_item_id = popover.children[2].children[0].classList[0];
-				
-				(popover_item_id != item_id ? jQuery(popover).popover("hide") : null);
-			}
-		} else if (evt.target.classList.contains("row_1_popover_btn")) {
-			const all_row_1_popover_btns = document.querySelectorAll(".row_1_popover_btn");
-			for (const btn of all_row_1_popover_btns) {
-				if (btn != evt.target) {
-					(btn.classList.contains("active") ? btn.classList.remove("active") : null);
-				} else {
-					btn.classList.toggle("active");
-				}
-			}
-		} else if (evt.target.classList.contains("delete_item_confirm_btn")) {
-			const opened_popover = document.querySelector(".popover");
-
-			let delete_from = null;
-			const all_row_1_popover_btns = document.querySelectorAll(".row_1_popover_btn");
-			for (const btn of all_row_1_popover_btns) {
-				(btn.classList.contains("active") ? delete_from = btn.innerHTML : null);
-			}
-			if (!delete_from) {
-				for (const btn of [...all_row_1_popover_btns]) {
-					utils.shake_element(btn);
-				}
-				return;
-			} else {
-				jQuery(opened_popover).popover("hide");
-			}
-
-			const item_id = evt.target.parentElement.parentElement.classList[0];
-			const item_category = active_category;
-			const item_type = document.querySelector(`#${item_id}`).dataset.type;
-			// console.log(item_id, item_category, item_type);
-
-			if (delete_from == "eternity" || delete_from == "both") {
-				const list_item = document.querySelector(`#${item_id}`);
-				list_item.innerHTML = "";
-				list_item.removeAttribute("data-url");
-				list_item.removeAttribute("data-type");
-				list_item.className = "";
-				list_item.classList.add("skeleton_item", "rounded", "mb-2");
-
-				try {
-					const ref = $globals_w.firebase_db.ref(`${item_category}/items/${item_id}`);
-					await ref.remove();
-	
-					list_item.remove();
-					active_item_ids.splice(active_item_ids.indexOf(item_id), 1);
-					delete active_data.items[item_id];
-				} catch (err) {
-					console.error(err);
-				}
-			}
-			if (delete_from == "Reddit" || delete_from == "both") {
-				globals_r.socket.emit("delete item from reddit acc", item_id, item_category, item_type);
-			}
-		} else if (!evt.target.classList.contains("row_2_popover_btn") && document.querySelector(".popover") && document.querySelector(".popover").contains(evt.target)) {
-			null;
-		} else {
-			jQuery("[data-toggle='popover']").popover("hide");
-		}
-
-		if (evt.target.parentElement == category_btn_group) {
-			const selected_category = await new Promise((resolve, reject) => {
-				setTimeout(() => {
-					let category = null;
-					for (const btn of [...(category_btn_group.children)]) {
-						(btn.classList.contains("active") ? category = btn.innerText : null);
-					}
-					resolve(category);
-				}, 100);
-			});
-			if (selected_category != active_category) {
-				active_category = selected_category;
-				show_skeleton_loading();
-				try {
-					await get_parse_set_data();
-				} catch (err) {
-					console.error(err);
-				}
-				refresh_item_list();
-				hide_skeleton_loading();
-				update_search_placeholder();
-				fill_subreddit_select();
-			}
-		} else if (evt.target.parentElement == type_btn_group) {
-			const selected_type = await new Promise((resolve, reject) => {
-				setTimeout(() => {
-					let type = null;
-					for (const btn of [...(type_btn_group.children)]) {
-						(btn.classList.contains("active") ? type = btn.innerText : null);
-					}
-					resolve(type);
-				}, 100);
-			});
-			if (selected_type != active_type) {
-				active_type = selected_type;
-				refresh_item_list();
-				update_search_placeholder();
-				fill_subreddit_select();
-			}
-		}
-
-		if (evt.target.id == "refresh_btn") {
-			new_data_alert_wrapper.classList.add("d-none");
-			show_skeleton_loading();
-			try {
-				await get_parse_set_data();
-			} catch (err) {
-				console.error(err);
-			}
-			refresh_item_list();
-			hide_skeleton_loading();
-			update_search_placeholder();
-			fill_subreddit_select();
-		}
-	}
-
-	function handle_body_keydown(evt) {
-		if (evt.key == "Escape") {
-			jQuery("[data-toggle='popover']").popover("hide");
-		}
-		
-		setTimeout(() => {
-			const no_results = document.querySelector(".no-results");
-			(no_results && !no_results.classList.contains("d-none") ? no_results.classList.add("d-none") : null);
-
-			(typeof subreddit_select_dropdown != "number" && !subreddit_select_dropdown.classList.contains("show") ? subreddit_select_btn.blur() : null);
-		}, 100);
-	}
 
 	async function get_parse_set_data() {
 		active_data.items = {};
@@ -491,7 +491,6 @@
 	}
 </script>
 
-<svelte:body on:click={handle_body_click} on:keydown={handle_body_keydown}/>
 <Navbar username={username} show_data_anchors={true}/>
 <div class="text-center mt-3">
 	<h1 class="display-4">{globals_r.app_name}</h1>

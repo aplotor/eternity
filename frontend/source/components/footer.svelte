@@ -36,6 +36,14 @@
 			list_domain_request_info(domain_request_info.last30days_countries, last30days_list_wrapper);
 		});
 
+		document.body.addEventListener("keydown", (evt) => {
+			if (evt.key == "Escape") {
+				setTimeout(() => {
+					(!dropdown_menu.classList.contains("show") ? dropdown_btn.blur() : null);
+				}, 100);
+			}
+		});
+
 		dropdown_btn.addEventListener("click", (evt) => {
 			setTimeout(() => {
 				(!dropdown_menu.classList.contains("show") ? dropdown_btn.blur() : null);
@@ -52,14 +60,6 @@
 	svelte.onDestroy(() => {
 		globals_r.socket.off("update domain request info");
 	});
-
-	function handle_body_keydown(evt) {
-		if (evt.key == "Escape") {
-			setTimeout(() => {
-				(!dropdown_menu.classList.contains("show") ? dropdown_btn.blur() : null);
-			}, 100);
-		}
-	}
 
 	function list_domain_request_info(countries, parent_ul) {
 		if (countries.length == 0) {
@@ -84,7 +84,6 @@
 	}
 </script>
 
-<svelte:body on:keydown={handle_body_keydown}/>
 <footer class="text-center">
 	<p class="font_size_10 m-0">released under the <a href="https://choosealicense.com/licenses/agpl-3.0" target="_blank">AGPL3 License</a> &#169; 2021+</p>
 	<p class="font_size_10 m-0"><a href="{($globals_w.all_apps_urls ? $globals_w.all_apps_urls.portals.link : "#")}/stats" target="_blank">cloudflare zone stats</a></p>

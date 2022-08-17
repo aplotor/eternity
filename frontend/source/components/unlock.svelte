@@ -69,7 +69,13 @@
 		});
 
 		jQuery('[data-toggle="tooltip"]').tooltip("enable");
-
+	
+		document.body.addEventListener("keydown", (evt) => {
+			if (evt.key == "Enter") {
+				(!save_and_continue_btn.hasAttribute("disabled") ? save_and_continue_btn.click() : null);
+			}
+		});
+		
 		instruction_video_anchor.addEventListener("click", (evt) => {
 			evt.preventDefault();
 			instruction_video_wrapper.classList.toggle("d-none");
@@ -185,15 +191,8 @@
 		globals_r.socket.off("allow save and continue");
 		globals_r.socket.off("switch page to loading");
 	});
-
-	function handle_body_keydown(evt) {
-		if (evt.key == "Enter") {
-			(!save_and_continue_btn.hasAttribute("disabled") ? save_and_continue_btn.click() : null);
-		}
-	}
 </script>
 
-<svelte:body on:keydown={handle_body_keydown}/>
 <Navbar username={username}/>
 <div class="text-center mt-3">
 	<h1 class="display-4">{globals_r.app_name}</h1>
