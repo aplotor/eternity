@@ -38,7 +38,8 @@
 	});
 	
 	let [
-		last_updated_wrapper,
+		last_updated_wrapper_1,
+		last_updated_wrapper_2,
 		search_input,
 		search_btn,
 		subreddit_select,
@@ -67,7 +68,10 @@
 		});
 
 		setInterval(() => {
-			(last_updated_epoch ? last_updated_wrapper.innerHTML = utils.time_since(last_updated_epoch) : null);
+			if (last_updated_epoch) {
+				last_updated_wrapper_1.innerHTML = utils.time_since(last_updated_epoch);
+				last_updated_wrapper_2.innerHTML = utils.epoch_to_formatted_datetime(last_updated_epoch);
+			}
 		}, 1000);
 
 		try {
@@ -96,6 +100,14 @@
 		jQuery(subreddit_select).on("changed.bs.select", (evt, clicked_index, is_selected, previous_value) => { // https://developer.snapappointments.com/bootstrap-select/options/#events
 			refresh_item_list();
 			update_search_placeholder();
+		});
+
+		last_updated_wrapper_1.addEventListener("click", (evt) => {
+			last_updated_wrapper_2.classList.toggle("d-none");
+		});
+
+		last_updated_wrapper_2.addEventListener("click", (evt) => {
+			evt.target.classList.toggle("d-none");
 		});
 
 		subreddit_select_btn.addEventListener("click", (evt) => {
@@ -483,7 +495,9 @@
 <Navbar username={username} show_data_anchors={true}/>
 <div class="text-center mt-3">
 	<h1 class="display-4">{globals_r.app_name}</h1>
-	<span>last updated: <b bind:this={last_updated_wrapper}>?</b> ago</span>
+	<span>last updated: <b bind:this={last_updated_wrapper_1}>?</b> ago</span>
+	<br/>
+	<small bind:this={last_updated_wrapper_2} class="d-none">?</small>
 	<div class="d-flex justify-content-center">
 		<div bind:this={new_data_alert_wrapper} class="px-1 d-none"></div>
 	</div>
