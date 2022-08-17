@@ -227,35 +227,6 @@
 		});
 	});
 
-	function handle_body_click(evt) {
-		if (!username) {
-			return;
-		}
-
-		setTimeout(() => {
-			if (!settings_menu.classList.contains("show")) {
-				hide_purge_warning();
-				(show_data_anchors ? hide_import_notice() : null);
-			}
-		}, 100);
-	}
-
-	function handle_body_keydown(evt) {
-		if (!username) {
-			return;
-		}
-
-		if (evt.key == "Escape") {
-			setTimeout(() => {
-				if (!settings_menu.classList.contains("show")) {
-					settings_btn.blur();
-					hide_purge_warning();
-					(show_data_anchors ? hide_import_notice() : null);
-				}
-			}, 100);
-		}
-	}
-
 	function toggle_import_notice() {
 		reset_import_notice();
 		import_notice.classList.toggle("d-none");
@@ -312,7 +283,6 @@
 	}
 </script>
 
-<svelte:body on:click={handle_body_click} on:keydown={handle_body_keydown}/>
 <nav class="mt-5 px-5">
 	{#if username}
 		<span class="float-right">
