@@ -17,37 +17,6 @@
 		last7days_list_wrapper,
 		last30days_list_wrapper
 	] = [];
-	svelte.onMount(() => {
-		globals_r.socket.on("update domain request info", (domain_request_info) => {
-			if (!domain_request_info || Object.keys(domain_request_info).length == 0) {
-				return;
-			}
-			
-			last24hours_total_wrapper.innerHTML = domain_request_info.last24hours_total;
-			last7days_total_wrapper.innerHTML = domain_request_info.last7days_total;
-			last30days_total_wrapper.innerHTML = domain_request_info.last30days_total;
-
-			list_domain_request_info(domain_request_info.last24hours_countries, last24hours_list_wrapper);
-			list_domain_request_info(domain_request_info.last7days_countries, last7days_list_wrapper);
-			list_domain_request_info(domain_request_info.last30days_countries, last30days_list_wrapper);
-		});
-
-		dropdown_btn.addEventListener("click", (evt) => {
-			setTimeout(() => {
-				(!dropdown_menu.classList.contains("show") ? dropdown_btn.blur() : null);
-			}, 100);
-
-			setTimeout(() => {
-				dropdown_menu.scrollIntoView({
-					behavior: "smooth",
-					block: "end"
-				});
-			}, 250);
-		});
-	});
-	svelte.onDestroy(() => {
-		globals_r.socket.off("update domain request info");
-	});
 
 	function handle_body_keydown(evt) {
 		if (evt.key == "Escape") {
@@ -80,6 +49,38 @@
 			`);
 		}
 	}
+
+	svelte.onMount(() => {
+		globals_r.socket.on("update domain request info", (domain_request_info) => {
+			if (!domain_request_info || Object.keys(domain_request_info).length == 0) {
+				return;
+			}
+			
+			last24hours_total_wrapper.innerHTML = domain_request_info.last24hours_total;
+			last7days_total_wrapper.innerHTML = domain_request_info.last7days_total;
+			last30days_total_wrapper.innerHTML = domain_request_info.last30days_total;
+
+			list_domain_request_info(domain_request_info.last24hours_countries, last24hours_list_wrapper);
+			list_domain_request_info(domain_request_info.last7days_countries, last7days_list_wrapper);
+			list_domain_request_info(domain_request_info.last30days_countries, last30days_list_wrapper);
+		});
+
+		dropdown_btn.addEventListener("click", (evt) => {
+			setTimeout(() => {
+				(!dropdown_menu.classList.contains("show") ? dropdown_btn.blur() : null);
+			}, 100);
+
+			setTimeout(() => {
+				dropdown_menu.scrollIntoView({
+					behavior: "smooth",
+					block: "end"
+				});
+			}, 250);
+		});
+	});
+	svelte.onDestroy(() => {
+		globals_r.socket.off("update domain request info");
+	});
 </script>
 
 <svelte:body on:keydown={handle_body_keydown}/>

@@ -11,6 +11,8 @@ const epoch = await import(`${backend}/model/epoch.mjs`);
 
 import snoowrap from "snoowrap";
 
+let update_all_completed = null;
+
 const usernames_to_socket_ids = {};
 const socket_ids_to_usernames = {};
 
@@ -700,7 +702,6 @@ async function get(username, existence_check=false) {
 	}
 }
 
-let update_all_completed = null;
 async function update_all(io) { // synchronous one-by-one user update till all users are updated
 	update_all_completed = false;
 

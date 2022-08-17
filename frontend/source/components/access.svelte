@@ -10,9 +10,23 @@
 </script>
 <script>
 	export let username;
-
-	let last_updated_epoch = null;
 	
+	let [
+		last_updated_epoch,
+		last_updated_wrappers_update_interval_id,
+		last_updated_wrapper_1,
+		last_updated_wrapper_2,
+		search_input,
+		search_btn,
+		subreddit_select,
+		subreddit_select_btn,
+		subreddit_select_dropdown,
+		category_btn_group,
+		type_btn_group,
+		skeleton_list,
+		new_data_alert_wrapper
+	] = [];
+
 	let active_data = { // active_category data ONLY
 		items: {},
 		item_sub_icon_urls: {}
@@ -35,124 +49,6 @@
 		root: item_list,
 		rootMargin: "0px",
 		threshold: 0
-	});
-	
-	let [
-		last_updated_wrapper_1,
-		last_updated_wrapper_2,
-		search_input,
-		search_btn,
-		subreddit_select,
-		subreddit_select_btn,
-		subreddit_select_dropdown,
-		category_btn_group,
-		type_btn_group,
-		skeleton_list,
-		new_data_alert_wrapper
-	] = [];
-	svelte.onMount(async () => {
-		globals_r.socket.emit("page switch", "access");
-		
-		globals_r.socket.on("store last updated epoch", (epoch) => {
-			last_updated_epoch = epoch;
-		});
-
-		globals_r.socket.on("show refresh alert", (categories_w_new_data) => {
-			for (const category of categories_w_new_data) {
-				if (category == active_category) {
-					(new_data_alert_wrapper.classList.contains("d-none") ? new_data_alert_wrapper.classList.remove("d-none") : null);
-					utils.show_alert(new_data_alert_wrapper, '<span class="ml-1">new data available!</span><button id="refresh_btn" class="btn btn-sm btn-primary ml-2">refresh</button>', "primary");
-					break;
-				}
-			}
-		});
-
-		setInterval(() => {
-			if (last_updated_epoch) {
-				last_updated_wrapper_1.innerHTML = utils.time_since(last_updated_epoch);
-				last_updated_wrapper_2.innerHTML = utils.epoch_to_formatted_datetime(last_updated_epoch);
-			}
-		}, 1000);
-
-		try {
-			await new Promise((resolve, reject) => {
-				const interval_id = setInterval(() => {
-					if ($globals_w.firebase_app && $globals_w.firebase_auth && $globals_w.firebase_db) {
-						clearInterval(interval_id);
-						resolve();
-					}
-				}, 100);
-			});
-
-			await get_parse_set_data();
-			refresh_item_list();
-			hide_skeleton_loading();
-			update_search_placeholder();
-			fill_subreddit_select();
-		} catch (err) {
-			console.error(err);
-		}
-
-		jQuery(subreddit_select).selectpicker();
-		subreddit_select_btn = document.querySelector(".bs-placeholder");
-		subreddit_select_dropdown = document.querySelector(".bootstrap-select");
-
-		jQuery(subreddit_select).on("changed.bs.select", (evt, clicked_index, is_selected, previous_value) => { // https://developer.snapappointments.com/bootstrap-select/options/#events
-			refresh_item_list();
-			update_search_placeholder();
-		});
-
-		last_updated_wrapper_1.addEventListener("click", (evt) => {
-			last_updated_wrapper_2.classList.toggle("d-none");
-		});
-
-		last_updated_wrapper_2.addEventListener("click", (evt) => {
-			evt.target.classList.toggle("d-none");
-		});
-
-		subreddit_select_btn.addEventListener("click", (evt) => {
-			(!subreddit_select_dropdown.classList.contains("show") ? subreddit_select_btn.blur() : null);
-		});
-
-		search_input.addEventListener("keydown", (evt) => {
-			if (evt.target.value.trim() == "") {
-				return;
-			}
-
-			switch (evt.key) {
-				case "Enter":
-					active_search_str = evt.target.value.trim();
-					refresh_item_list();
-					break;
-				case "Escape":
-					evt.target.value = "";
-					active_search_str = "";
-					refresh_item_list();
-					break;
-				default:
-					setTimeout(() => {
-						if (active_search_str && evt.target.value.trim() == "") {
-							active_search_str = "";
-							refresh_item_list();
-						}
-					}, 100);
-					break;
-			}
-		});
-
-		search_btn.addEventListener("click", (evt) => {
-			search_input.dispatchEvent(new KeyboardEvent("keydown", {
-				key: "Enter"
-			}));
-		});
-
-		item_list.addEventListener("scroll", (evt) => {
-			jQuery("[data-toggle='popover']").popover("hide");
-		});
-	});
-	svelte.onDestroy(() => {
-		globals_r.socket.off("store last updated epoch");
-		globals_r.socket.off("show refresh alert");
 	});
 
 	async function handle_body_click(evt) {
@@ -311,7 +207,7 @@
 			const no_results = document.querySelector(".no-results");
 			(no_results && !no_results.classList.contains("d-none") ? no_results.classList.add("d-none") : null);
 
-			(typeof subreddit_select_dropdown != "number" && !subreddit_select_dropdown.classList.contains("show") ? subreddit_select_btn.blur() : null);
+			(subreddit_select_dropdown && typeof subreddit_select_dropdown != "number" && !subreddit_select_dropdown.classList.contains("show") ? subreddit_select_btn.blur() : null);
 		}, 100);
 	}
 
@@ -489,6 +385,113 @@
 		jQuery(subreddit_select).selectpicker("refresh");
 		jQuery(subreddit_select).selectpicker("render");
 	}
+
+	svelte.onMount(async () => {
+		globals_r.socket.emit("page switch", "access");
+		
+		globals_r.socket.on("store last updated epoch", (epoch) => {
+			last_updated_epoch = epoch;
+		});
+
+		globals_r.socket.on("show refresh alert", (categories_w_new_data) => {
+			for (const category of categories_w_new_data) {
+				if (category == active_category) {
+					(new_data_alert_wrapper.classList.contains("d-none") ? new_data_alert_wrapper.classList.remove("d-none") : null);
+					utils.show_alert(new_data_alert_wrapper, '<span class="ml-1">new data available!</span><button id="refresh_btn" class="btn btn-sm btn-primary ml-2">refresh</button>', "primary");
+					break;
+				}
+			}
+		});
+
+		last_updated_wrappers_update_interval_id = setInterval(() => {
+			if (last_updated_epoch) {
+				last_updated_wrapper_1.innerHTML = utils.time_since(last_updated_epoch);
+				last_updated_wrapper_2.innerHTML = utils.epoch_to_formatted_datetime(last_updated_epoch);
+			}
+		}, 1000);
+
+		try {
+			await new Promise((resolve, reject) => {
+				const interval_id = setInterval(() => {
+					if ($globals_w.firebase_app && $globals_w.firebase_auth && $globals_w.firebase_db) {
+						clearInterval(interval_id);
+						resolve();
+					}
+				}, 100);
+			});
+
+			await get_parse_set_data();
+			refresh_item_list();
+			hide_skeleton_loading();
+			update_search_placeholder();
+			fill_subreddit_select();
+		} catch (err) {
+			console.error(err);
+		}
+
+		jQuery(subreddit_select).selectpicker();
+		subreddit_select_btn = document.querySelector(".bs-placeholder");
+		subreddit_select_dropdown = document.querySelector(".bootstrap-select");
+
+		jQuery(subreddit_select).on("changed.bs.select", (evt, clicked_index, is_selected, previous_value) => { // https://developer.snapappointments.com/bootstrap-select/options/#events
+			refresh_item_list();
+			update_search_placeholder();
+		});
+
+		last_updated_wrapper_1.addEventListener("click", (evt) => {
+			last_updated_wrapper_2.classList.toggle("d-none");
+		});
+
+		last_updated_wrapper_2.addEventListener("click", (evt) => {
+			evt.target.classList.toggle("d-none");
+		});
+
+		subreddit_select_btn.addEventListener("click", (evt) => {
+			(!subreddit_select_dropdown.classList.contains("show") ? subreddit_select_btn.blur() : null);
+		});
+
+		search_input.addEventListener("keydown", (evt) => {
+			if (evt.target.value.trim() == "") {
+				return;
+			}
+
+			switch (evt.key) {
+				case "Enter":
+					active_search_str = evt.target.value.trim();
+					refresh_item_list();
+					break;
+				case "Escape":
+					evt.target.value = "";
+					active_search_str = "";
+					refresh_item_list();
+					break;
+				default:
+					setTimeout(() => {
+						if (active_search_str && evt.target.value.trim() == "") {
+							active_search_str = "";
+							refresh_item_list();
+						}
+					}, 100);
+					break;
+			}
+		});
+
+		search_btn.addEventListener("click", (evt) => {
+			search_input.dispatchEvent(new KeyboardEvent("keydown", {
+				key: "Enter"
+			}));
+		});
+
+		item_list.addEventListener("scroll", (evt) => {
+			jQuery("[data-toggle='popover']").popover("hide");
+		});
+	});
+	svelte.onDestroy(() => {
+		globals_r.socket.off("store last updated epoch");
+		globals_r.socket.off("show refresh alert");
+
+		clearInterval(last_updated_wrappers_update_interval_id);
+	});
 </script>
 
 <svelte:body on:click={handle_body_click} on:keydown={handle_body_keydown}/>

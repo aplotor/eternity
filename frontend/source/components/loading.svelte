@@ -8,12 +8,11 @@
 </script>
 <script>
 	export let username;
+	
+	let progress_wrapper = null;
 
 	const dispatch = svelte.createEventDispatcher();
-	
-	let [
-		progress_wrapper
-	] = [];
+
 	svelte.onMount(() => {
 		globals_r.socket.emit("page switch", "loading");
 

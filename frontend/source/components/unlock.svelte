@@ -9,8 +9,6 @@
 </script>
 <script>
 	export let username;
-
-	const dispatch = svelte.createEventDispatcher();
 	
 	let [
 		instruction_video_anchor,
@@ -26,6 +24,15 @@
 		save_and_continue_btn_wrapper,
 		save_and_continue_btn
 	] = [];
+	
+	const dispatch = svelte.createEventDispatcher();
+
+	function handle_body_keydown(evt) {
+		if (evt.key == "Enter") {
+			(!save_and_continue_btn.hasAttribute("disabled") ? save_and_continue_btn.click() : null);
+		}
+	}
+
 	svelte.onMount(() => {
 		globals_r.socket.emit("page switch", "unlock");
 
@@ -185,12 +192,6 @@
 		globals_r.socket.off("allow save and continue");
 		globals_r.socket.off("switch page to loading");
 	});
-
-	function handle_body_keydown(evt) {
-		if (evt.key == "Enter") {
-			(!save_and_continue_btn.hasAttribute("disabled") ? save_and_continue_btn.click() : null);
-		}
-	}
 </script>
 
 <svelte:body on:keydown={handle_body_keydown}/>

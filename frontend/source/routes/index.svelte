@@ -8,9 +8,9 @@
 	import * as svelte from "svelte";
 	import axios from "axios";
 
-	const globals_r = globals.readonly;
-
 	let username = null;
+
+	const globals_r = globals.readonly;
 
 	export async function load(obj) {
 		try {
@@ -47,6 +47,19 @@
 
 	let active_page = null;
 
+	function handle_component_dispatch(evt) {
+		switch (evt.detail) {
+			case "switch page to loading":
+				active_page = Loading;
+				break;
+			case "switch page to access":
+				active_page = Access;
+				break;
+			default:
+				break;
+		}
+	}
+
 	switch (use_page) {
 		case "landing":
 			active_page = Landing;
@@ -71,19 +84,6 @@
 
 		globals_r.socket.emit("navigation", "index");
 	});
-
-	function handle_component_dispatch(evt) {
-		switch (evt.detail) {
-			case "switch page to loading":
-				active_page = Loading;
-				break;
-			case "switch page to access":
-				active_page = Access;
-				break;
-			default:
-				break;
-		}
-	}
 </script>
 
 <svelte:head>

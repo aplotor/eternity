@@ -34,6 +34,62 @@
 		redirect_countdown_wrapper,
 		modal
 	] = [];
+
+	function toggle_import_notice() {
+		reset_import_notice();
+		import_notice.classList.toggle("d-none");
+	}
+
+	function hide_import_notice() {
+		reset_import_notice();
+		(!import_notice.classList.contains("d-none") ? import_notice.classList.add("d-none") : null);
+	}
+
+	function reset_import_notice() {
+		files_input.files = new DataTransfer().files;
+		selected_files_list.innerHTML = "";
+	}
+
+	function toggle_purge_warning() {
+		purge_input.value = "";
+		purge_warning.classList.toggle("d-none");
+	}
+
+	function hide_purge_warning() {
+		purge_input.value = "";
+		(!purge_warning.classList.contains("d-none") ? purge_warning.classList.add("d-none") : null);
+	}
+
+	async function purge() {
+		toggle_purge_warning();
+		purge_spinner_container.classList.toggle("d-none");
+
+		try {
+			const response = await fetch(`${globals_r.backend}/purge?&socket_id=${globals_r.socket.id}`, {
+				method: "get"
+			});
+			const response_data = await response.text();
+
+			if (response_data == "success") {
+				setTimeout(() => {
+					window.location.reload();
+				}, 10000);
+				
+				purge_spinner_container.classList.toggle("d-none");
+				redirect_notice.classList.toggle("d-none");
+
+				let countdown = 10;
+				setInterval(() => {
+					redirect_countdown_wrapper.innerHTML = --countdown;
+				}, 1000);
+			} else {
+				console.error(response_data);
+			}
+		} catch (err) {
+			console.error(err);
+		}
+	}
+
 	svelte.onMount(() => {
 		if (!username) {
 			return;
@@ -226,61 +282,6 @@
 			}
 		});
 	});
-
-	function toggle_import_notice() {
-		reset_import_notice();
-		import_notice.classList.toggle("d-none");
-	}
-
-	function hide_import_notice() {
-		reset_import_notice();
-		(!import_notice.classList.contains("d-none") ? import_notice.classList.add("d-none") : null);
-	}
-
-	function reset_import_notice() {
-		files_input.files = new DataTransfer().files;
-		selected_files_list.innerHTML = "";
-	}
-
-	function toggle_purge_warning() {
-		purge_input.value = "";
-		purge_warning.classList.toggle("d-none");
-	}
-
-	function hide_purge_warning() {
-		purge_input.value = "";
-		(!purge_warning.classList.contains("d-none") ? purge_warning.classList.add("d-none") : null);
-	}
-
-	async function purge() {
-		toggle_purge_warning();
-		purge_spinner_container.classList.toggle("d-none");
-
-		try {
-			const response = await fetch(`${globals_r.backend}/purge?&socket_id=${globals_r.socket.id}`, {
-				method: "get"
-			});
-			const response_data = await response.text();
-
-			if (response_data == "success") {
-				setTimeout(() => {
-					window.location.reload();
-				}, 10000);
-				
-				purge_spinner_container.classList.toggle("d-none");
-				redirect_notice.classList.toggle("d-none");
-
-				let countdown = 10;
-				setInterval(() => {
-					redirect_countdown_wrapper.innerHTML = --countdown;
-				}, 1000);
-			} else {
-				console.error(response_data);
-			}
-		} catch (err) {
-			console.error(err);
-		}
-	}
 </script>
 
 <nav class="mt-5 px-5">

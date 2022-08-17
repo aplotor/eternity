@@ -23,6 +23,11 @@ import crypto from "crypto";
 import filesystem from "fs";
 import fileupload from "express-fileupload";
 
+let [
+	all_apps_urls,
+	domain_request_info
+] = [];
+
 const app = express();
 const app_name = "eternity";
 const server = http.createServer(app);
@@ -39,15 +44,13 @@ const app_socket = socket_io_client.io("http://localhost:1026", {
 	}
 });
 
+const frontend = backend.replace("backend", "frontend");
+
 file.init();
 await sql.init_db();
 sql.cycle_backup_db();
 await user.fill_usernames_to_socket_ids();
 user.cycle_update_all(io);
-
-const frontend = backend.replace("backend", "frontend");
-let all_apps_urls = null;
-let domain_request_info = null;
 
 app.use(fileupload({
 	limits: {
