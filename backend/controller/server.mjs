@@ -108,7 +108,7 @@ process.nextTick(() => { // handle any deserializeUser errors here
 app.use(express.urlencoded({
 	extended: false
 }));
-app.use(cookie_session({ // https://expressjs.com/en/resources/middleware/cookie-session.html, https://www.npmjs.com/package/cookie-session, https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies
+app.use(cookie_session({ // https://github.com/expressjs/cookie-session
 	name: `${app_name}_session`,
 	path: "/",
 	secret: secrets.session_secret,
@@ -118,6 +118,10 @@ app.use(cookie_session({ // https://expressjs.com/en/resources/middleware/cookie
 	sameSite: "lax",
 	maxAge: 1000*60*60*24*30
 }));
+app.use((req, res, next) => { // rolling session: https://github.com/expressjs/cookie-session#extending-the-session-expiration
+	req.session.nowInMinutes = Math.floor(Date.now() / 60000);
+	next();
+});
 app.use(passport.initialize());
 app.use(passport.session());
 
