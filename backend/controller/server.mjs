@@ -374,7 +374,7 @@ io.on("connect", (socket) => {
 		const verification_url = `${(run_config == "dev" ? "http://"+(await internal_ip.internalIpV4())+":"+secrets.port : "https://eternity.portals.sh")}/email_verification?token=${cryptr.encrypt(socket.username + " " + socket.id)}`;
 		email.send(obj, "verify your email", `you have requested a new eternity account and specified this email (<a href="mailto:${email_addr}">${email_addr}</a>) as contact. to continue, click this link: <a href="${verification_url}" target="_blank">${verification_url}</a>. if you did not do this, please ignore this email`);
 
-		io.to(socket.id).emit("alert", "verify", "click on the link sent to this email to verify that it's your email. check your junk/spam folder if you don't see it. the verification must be done while this page is open, so don't close or navigate away from this page", "primary");
+		io.to(socket.id).emit("alert", "verify", "click on the link sent to this email to verify that it's your email. check your junk/spam folder if you don't see it. the verification must be done while this page is open, so don't close this page", "primary");
 	});
 
 	socket.on("verify token", (encrypted_token) => {

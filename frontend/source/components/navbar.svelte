@@ -158,7 +158,7 @@
 				return;
 			} else {
 				selected_files_list.insertAdjacentHTML("beforeend", `
-					<li class="mb-1"><b class="text-danger">PREPARING IMPORT. DO NOT CLOSE OR NAVIGATE AWAY FROM THIS PAGE UNTIL IT'S READY. YOU WILL KNOW WHEN YOU SEE A MODAL (POPUP)</b></li>
+					<li class="mb-1"><b class="text-danger">PREPARING IMPORT. DO NOT CLOSE THIS PAGE UNTIL IT'S READY. YOU WILL KNOW WHEN YOU SEE A MODAL (POPUP)</b></li>
 				`);
 			}
 
