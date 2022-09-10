@@ -16,10 +16,8 @@
 		try {
 			const response = await axios.get(`${globals_r.backend}/authentication_check?socket_id=${globals_r.socket.id}`);
 			const response_data = response.data;
-			// console.log(response_data);
 
 			username = response_data.username; // undefined if use_page is "landing"
-			// console.log(username);
 
 			return {
 				status: 200,
@@ -82,7 +80,7 @@
 			window.history.pushState(null, "", window.location.href.slice(0, -3));
 		}
 
-		globals_r.socket.emit("navigation", "index");
+		globals_r.socket.emit("route", "index");
 	});
 </script>
 

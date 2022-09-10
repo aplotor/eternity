@@ -15,8 +15,6 @@
 		console.log(obj.error.message);
 
 		if (obj.status != 404) {
-			console.log(1);
-
 			ensure_redirect(obj.url.pathname);
 
 			return {
@@ -25,8 +23,6 @@
 				}
 			};
 		} else {
-			console.log(2);
-
 			try {
 				await axios.get(globals_r.backend + obj.url.pathname); // should throw an error
 			} catch (err) {
@@ -47,7 +43,7 @@
 	export let http_status;
 
 	svelte.onMount(() => {
-		globals_r.socket.emit("navigation", http_status);
+		globals_r.socket.emit("route", http_status);
 	});
 </script>
 

@@ -14,6 +14,9 @@ export default { // https://kit.svelte.dev/docs/configuration
 			hooks: "./source/hooks.js",
 			assets: "./static/"
 		},
-		trailingSlash: "never"
+		trailingSlash: "never",
+		env: {
+			publicPrefix: ""
+		}
 	}
 };

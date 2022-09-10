@@ -27,7 +27,7 @@ async function insert_data(db, data) {
 	const updates = {};
 
 	for (const category in data) {
-		if (Object.keys(data[category].items).length != 0) {
+		if (Object.keys(data[category].items).length > 0) {
 			let entries = Object.entries(data[category].items);
 			for (const entry of entries) {
 				const item_key = entry[0];
@@ -46,8 +46,17 @@ async function insert_data(db, data) {
 		}
 	}
 	
-	const ref = db.ref().root;
-	await ref.update(updates);
+	if (Object.keys(updates).length > 0) {
+		const ref = db.ref().root;
+		await ref.update(updates);
+	}
+}
+
+async function get_fns_to_import(db, category) {
+	const ref = db.ref(`${category}/item_fns_to_import`).limitToFirst(500);
+	const snapshot = await ref.get();
+	const data = snapshot.val(); // null if no item_fns_to_import
+	return data;
 }
 
 async function delete_imported_fns(db, fns) {
@@ -61,8 +70,10 @@ async function delete_imported_fns(db, fns) {
 		}
 	}
 
-	const ref = db.ref().root;
-	await ref.update(updates);
+	if (Object.keys(updates).length > 0) {
+		const ref = db.ref().root;
+		await ref.update(updates);
+	}
 }
 
 async function create_new_auth_token(app) {
@@ -79,6 +90,7 @@ export {
 	get_db,
 	is_empty,
 	insert_data,
+	get_fns_to_import,
 	delete_imported_fns,
 	create_new_auth_token
 };

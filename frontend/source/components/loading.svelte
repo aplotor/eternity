@@ -14,7 +14,7 @@
 	const dispatch = svelte.createEventDispatcher();
 
 	svelte.onMount(() => {
-		globals_r.socket.emit("page switch", "loading");
+		globals_r.socket.emit("page", "loading");
 
 		globals_r.socket.on("update progress", (progress, complete) => {
 			const progress_percentage = progress/complete * 100;

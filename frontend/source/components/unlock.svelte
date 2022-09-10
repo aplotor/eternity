@@ -17,10 +17,12 @@
 		file_input,
 		file_input_label,
 		validate_btn,
-		validate_alert_wrapper,
+		firebase_alert_wrapper,
 		email_input,
+		confirm_btn,
+		verification_code_input,
 		verify_btn,
-		verify_alert_wrapper,
+		email_alert_wrapper,
 		save_and_continue_btn_wrapper,
 		save_and_continue_btn
 	] = [];
@@ -34,15 +36,15 @@
 	}
 
 	svelte.onMount(() => {
-		globals_r.socket.emit("page switch", "unlock");
+		globals_r.socket.emit("page", "unlock");
 
 		globals_r.socket.on("alert", (alert, msg, type) => {
 			switch (alert) {
-				case "validate":
-					utils.show_alert(validate_alert_wrapper, msg, type);
+				case "firebase":
+					utils.show_alert(firebase_alert_wrapper, msg, type);
 					break;
-				case "verify":
-					utils.show_alert(verify_alert_wrapper, msg, type);
+				case "email":
+					utils.show_alert(email_alert_wrapper, msg, type);
 					break;
 				default:
 					break;
@@ -54,6 +56,9 @@
 				case "validate":
 					validate_btn.setAttribute("disabled", "");
 					break;
+				case "confirm":
+					confirm_btn.setAttribute("disabled", "");
+					break;
 				case "verify":
 					verify_btn.setAttribute("disabled", "");
 					break;
@@ -62,17 +67,22 @@
 			}
 		});
 
-		globals_r.socket.on("allow save and continue", () => {
-			jQuery('[data-toggle="tooltip"]').tooltip("disable");
-			save_and_continue_btn.removeAttribute("disabled");
+		globals_r.socket.on("enable button", (button) => {
+			switch (button) {
+				case "verify":
+					verify_btn.removeAttribute("disabled");
+					break;
+				case "save_and_continue":
+					jQuery('[data-toggle="tooltip"]').tooltip("disable");
+					save_and_continue_btn.removeAttribute("disabled");
+					break;
+				default:
+					break;
+			}
 		});
 
 		globals_r.socket.on("switch page to loading", () => {
 			dispatch("dispatch", "switch page to loading");
-		});
-
-		globals_r.socket.on("emit back encrypted token", (encrypted_token) => {
-			globals_r.socket.emit("verify token", encrypted_token);
 		});
 
 		jQuery('[data-toggle="tooltip"]').tooltip("enable");
@@ -102,7 +112,7 @@
 
 		validate_btn.addEventListener("click", (evt) => {
 			if (!config_input.value) {
-				utils.show_alert(validate_alert_wrapper, "provide the web app config", "warning");
+				utils.show_alert(firebase_alert_wrapper, "provide the web app config", "warning");
 				return;
 			}
 
@@ -111,12 +121,12 @@
 				web_app_config = JSON.parse(config_input.value.replace(/(\s)/g, "").replace(";", "").replace("{", '{"').replaceAll(':"', '":"').replaceAll('",', '","'));
 			} catch (err) {
 				console.error(err);
-				utils.show_alert(validate_alert_wrapper, "this is not a Firebase web app config", "danger");
+				utils.show_alert(firebase_alert_wrapper, "this is not a Firebase web app config", "danger");
 				return;
 			}
 
 			if (!file_input.value) {
-				utils.show_alert(validate_alert_wrapper, "provide the service account key file", "warning");
+				utils.show_alert(firebase_alert_wrapper, "provide the service account key file", "warning");
 				return;
 			}
 
@@ -126,24 +136,24 @@
 			const filesize_limit = 3072; // 3kb in binary bytes. firebase service account key files should be ~2.3kb
 
 			if (filename.split(".").pop().toLowerCase() != "json" || filesize > filesize_limit) {
-				utils.show_alert(validate_alert_wrapper, "this is not a Firebase service account key file", "danger");
+				utils.show_alert(firebase_alert_wrapper, "this is not a Firebase service account key file", "danger");
 				return;
 			}
 
 			const data = new FormData();
-			data.append("file", file);
+			data.append("key", file, file.name);
 
 			const request = new XMLHttpRequest();
 			request.open("post", `${globals_r.backend}/upload`);
 			request.responseType = "json";
 
 			request.addEventListener("error", (evt) => {
-				utils.show_alert(validate_alert_wrapper, "save error", "danger");
+				utils.show_alert(firebase_alert_wrapper, "save error", "danger");
 			});
 
 			request.onreadystatechange = function () {
 				if (this.readyState == 4 && this.status == 200) {
-					utils.show_alert(validate_alert_wrapper, '<div class="d-flex justify-content-center pt-1"><div class="dot-carousel mr-4"></div><span class="mt-n1">validating key and database</span><div class="dot-carousel ml-4"></div></div>', "success");
+					utils.show_alert(firebase_alert_wrapper, '<div class="d-flex justify-content-center pt-1"><div class="dot-carousel mr-4"></div><span class="mt-n1">validating key and database</span><div class="dot-carousel ml-4"></div></div>', "success");
 
 					setTimeout(() => {
 						globals_r.socket.emit("validate firebase info", web_app_config);
@@ -155,18 +165,30 @@
 		});
 
 		email_input.addEventListener("keydown", (evt) => {
+			(evt.key == "Enter" ? confirm_btn.click() : null);
+		});
+
+		confirm_btn.addEventListener("click", (evt) => {
+			const email = email_input.value.trim();
+
+			if (!(email && email.includes("@") && email.includes(".") && email.length >= 7)) {
+				utils.show_alert(email_alert_wrapper, "this is not an email address", "warning");
+				return;
+			}
+
+			globals_r.socket.emit("confirm email", email);
+		});
+
+		verification_code_input.addEventListener("keydown", (evt) => {
+			setTimeout(() => {
+				evt.target.value = evt.target.value.toUpperCase();
+			}, 100);
 			(evt.key == "Enter" ? verify_btn.click() : null);
 		});
 
 		verify_btn.addEventListener("click", (evt) => {
-			const email = email_input.value.trim();
-
-			if (!(email && email.includes("@") && email.includes(".") && email.length >= 7)) {
-				utils.show_alert(verify_alert_wrapper, "this is not an email address", "warning");
-				return;
-			}
-
-			globals_r.socket.emit("verify email", email);
+			const code = verification_code_input.value;
+			globals_r.socket.emit("verify code", username, code);
 		});
 
 		save_and_continue_btn_wrapper.addEventListener("mouseenter", (evt) => {
@@ -188,7 +210,6 @@
 	svelte.onDestroy(() => {
 		globals_r.socket.off("alert");
 		globals_r.socket.off("disable button");
-		globals_r.socket.off("emit back encrypted token");
 		globals_r.socket.off("allow save and continue");
 		globals_r.socket.off("switch page to loading");
 	});
@@ -221,13 +242,19 @@
 					</div>
 					<button bind:this={validate_btn} class="btn btn-primary shadow-none ml-2">validate</button>
 				</li>
-				<li class="no_bullet mt-2"><div bind:this={validate_alert_wrapper}></div></li>
-				<li class="mt-2">provide a contact email for notifications and updates regarding your eternity account</li>
-				<li class="no_bullet d-flex mt-2">
-					<input bind:this={email_input} type="text" class="form-control bg-light" placeholder="contact email address"/>
-					<button bind:this={verify_btn} class="btn btn-primary shadow-none ml-2">verify</button>
+				<li class="no_bullet mt-2"><div bind:this={firebase_alert_wrapper}></div></li>
+				<li class="mt-2">provide an email for notifications about your eternity account</li>
+				<li class="no_bullet mt-2">
+					<div class="d-flex w-100">
+						<input bind:this={email_input} type="text" class="form-control bg-light" placeholder="email address"/>
+						<button bind:this={confirm_btn} class="btn btn-primary shadow-none ml-2">confirm</button>
+					</div>
+					<div class="d-flex w-100 mt-2">
+						<input bind:this={verification_code_input} type="text" class="form-control bg-light" placeholder="verification code"/>
+						<button bind:this={verify_btn} class="btn btn-primary shadow-none ml-2" disabled>verify</button>
+					</div>
 				</li>
-				<li class="no_bullet mt-2"><div bind:this={verify_alert_wrapper}></div></li>
+				<li class="no_bullet mt-2"><div bind:this={email_alert_wrapper}></div></li>
 			</ul>
 			<div bind:this={save_and_continue_btn_wrapper} data-toggle="tooltip" data-trigger="manual" data-placement="top" title="complete the required steps above first">
 				<button bind:this={save_and_continue_btn} class="btn btn-primary shadow-none w-100 mt-3" disabled>save and continue</button>

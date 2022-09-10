@@ -13,12 +13,12 @@ export default { // https://vitejs.dev/config
 	},
 	server: {
 		host: "0.0.0.0",
-		port: 1300,
+		port: Number.parseInt(process.env.PORT),
 		strictPort: true,
 		proxy: {
 			"/backend": {
 				rewrite: (path) => path.replace(/^(\/backend)/, ""),
-				target: "http://localhost:1301",
+				target: `http://localhost:${Number.parseInt(process.env.PORT)+1}`,
 				secure: false,
 				changeOrigin: true,
 				ws: true
@@ -29,6 +29,9 @@ export default { // https://vitejs.dev/config
 			allow: [
 				frontend
 			]
+		},
+		watch: {
+			usePolling: true // for hmr on wsl2: https://vitejs.dev/config/server-options.html#server-watch
 		}
 	}
 };

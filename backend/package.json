@@ -1,29 +1,29 @@
 {
 	"type": "module",
 	"scripts": {
-		"dev": "nodemon ./controller/server.mjs",
-		"prod_start": "pm2 start ./controller/server.mjs --interpreter node --name eternity",
-		"prod_stop": "pm2 stop ./controller/server.mjs",
-		"prod_restart": "pm2 restart ./controller/server.mjs"
+		"dev": "RUN=dev PORT=1301 nodemon ./controller/server.mjs",
+		"prod_start": "RUN=prod PORT=1301 pm2 start ./controller/server.mjs --interpreter node --name portals",
+		"prod_stop": "pm2 stop ./controller/server.mjs"
 	},
 	"devDependencies": {
-		"nodemon": "^2.0.19"
+		"nodemon": "2.0.19"
 	},
 	"dependencies": {
-		"axios": "^0.26.1",
-		"cookie-session": "^1.4.0",
-		"cryptr": "^6.0.3",
-		"express": "^4.18.1",
-		"express-fileupload": "^1.4.0",
-		"firebase-admin": "^10.3.0",
-		"internal-ip": "^7.0.0",
-		"nodemailer": "^6.7.8",
-		"passport": "^0.5.3",
-		"passport-reddit": "^0.2.4",
-		"pg": "^8.7.3",
-		"snoowrap": "^1.23.0",
-		"socket.io": "^4.5.1",
-		"socket.io-client": "^4.5.1",
-		"winston": "^3.8.1"
+		"axios": "0.26.1",
+		"cookie-session": "1.4.0",
+		"cryptr": "6.0.3",
+		"dotenv": "16.0.2",
+		"express": "4.18.1",
+		"express-fileupload": "1.4.0",
+		"firebase-admin": "10.3.0",
+		"internal-ip": "7.0.0",
+		"nodemailer": "6.7.8",
+		"passport": "0.5.3",
+		"passport-reddit": "0.2.4",
+		"pg": "8.7.3",
+		"snoowrap": "1.23.0",
+		"socket.io": "4.5.1",
+		"socket.io-client": "4.5.1",
+		"winston": "3.8.1"
 	}
 }

@@ -40,13 +40,13 @@ body::-webkit-scrollbar-thumb:hover {
 }
 
 content {
-	padding: 0 0 4rem 0; /* match bottom to footer height */
+	padding: 0 0 6.5rem 0; /* match bottom to footer height */
 }
 
 footer {
 	position: absolute;
 	width: 100%;
-	height: 4rem; /* space from bottom */
+	height: 6.5rem; /* space from bottom */
 	bottom: 0;
 }
 

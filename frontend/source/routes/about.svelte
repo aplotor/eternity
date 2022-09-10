@@ -8,12 +8,12 @@
 </script>
 <script>
 	svelte.onMount(() => {
-		globals_r.socket.emit("navigation", "terms_privacy_support");
+		globals_r.socket.emit("route", "about");
 	});
 </script>
 
 <svelte:head>
-	<title>{globals_r.app_name} — terms, privacy, support</title>
+	<title>{globals_r.app_name} — about</title>
 	<meta name="description" content={globals_r.description}/>
 </svelte:head>
 <Navbar show_return_to_app={true}/>
@@ -33,14 +33,13 @@
 				<li class="mt-3">login is handled directly by Reddit (<a href="https://github.com/reddit-archive/reddit/wiki/OAuth2">oauth2</a>) so your password is never sent to eternity</li>
 				<li class="mt-2">eternity uses your Reddit authorization to continuously retrieve your new Reddit items, and stores them in your database using the Firebase info you provided</li>
 				<li class="mt-2">your Reddit items are stored solely in your own database, and your database is used solely for your own Reddit items</li>
-				<li class="mt-2">your email is never shared, and eternity will only email you for notifications and updates regarding your eternity account (e.g., your account becomes inactive, your database reaches its storage limit)</li>
+				<li class="mt-2">your email is never shared, and eternity will only email you for account notifications (e.g., your account becomes inactive, your database reaches its storage limit)</li>
 			</ul>
 			<p class="mt-4">support</p>
 			<ul class="line_height_1 mt-n2">
-				<li class="mt-3">please don't chat/dm me on Reddit for eternity support. it will NOT be answered. instead, use one of the following methods</li>
-				<li class="mt-2"><a href={`${globals_r.repo}/issues`} target="_blank">issue tracker</a></li>
+				<li class="mt-3"><a href={`${globals_r.repo}/issues`} target="_blank">issue tracker</a></li>
 				<li class="mt-2"><a href={`${globals_r.repo}/discussions/categories/q-a`} target="_blank">general questions</a></li>
-				<li class="mt-2"><a href={`mailto:${globals_r.app_name}@portals.sh`}>private questions</a></li>
+				<li class="mt-2"><a href="mailto:eternity@portals.sh">private questions</a></li>
 			</ul>
 		</div>
 	</div>

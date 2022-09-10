@@ -85,6 +85,8 @@
 
 <svelte:body on:keydown={handle_body_keydown}/>
 <footer class="text-center">
+	<p class="font_size_10 m-0"><a href="/about">about</a></p>
+	<p class="font_size_10 m-0"><a href={globals_r.sponsor_url} target="_blank">support this project</a></p>
 	<p class="font_size_10 m-0">released under the <a href="https://choosealicense.com/licenses/agpl-3.0" target="_blank">AGPL3 License</a> &#169; 2021+</p>
 	<p class="font_size_10 m-0"><a href="{($globals_w.all_apps_urls ? $globals_w.all_apps_urls.portals.link : "#")}/stats" target="_blank">cloudflare zone stats</a></p>
 	<div class="btn-group dropdown">

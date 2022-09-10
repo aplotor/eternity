@@ -1,16 +1,18 @@
 const backend = process.cwd();
-const run_config = (backend.toLowerCase().startsWith("/mnt/c/") ? "dev" : "prod");
 
 import filesystem from "fs";
 
-function init() {
-	if (run_config == "dev") {
-		filesystem.closeSync(filesystem.openSync(`${backend}/logs/log.txt`, "w"));
-		filesystem.closeSync(filesystem.openSync(`${backend}/logs/error.txt`, "w"));
-		console.log("cleared all logs");
+async function init() {
+	for (const dir of [`${backend}/logs/`, `${backend}/tempfiles/`]) {
+		if (filesystem.existsSync(dir)) {
+			if (process.env.RUN == "dev") {
+				const files = await filesystem.promises.readdir(dir);
+				await Promise.all(files.map((file, idx, arr) => (dir == `${backend}/logs/` ? filesystem.promises.truncate(`${dir}/${file}`.replace("//", "/"), 0) : filesystem.promises.unlink(`${dir}/${file}`.replace("//", "/")))));
+			}
+		} else {
+			filesystem.mkdirSync(dir);
+		}
 	}
-
-	(!filesystem.existsSync(`${backend}/tempfiles/`) ? filesystem.mkdirSync(`${backend}/tempfiles/`) : null);
 }
 
 export {

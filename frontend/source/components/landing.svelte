@@ -8,7 +8,7 @@
 </script>
 <script>
 	svelte.onMount(() => {
-		globals_r.socket.emit("page switch", "landing");
+		globals_r.socket.emit("page", "landing");
 	});
 </script>
 
@@ -16,7 +16,7 @@
 <div class="text-center mt-3">
 	<div class="jumbotron bg-dark mb-0 py-5">
 		<h1 class="display-4">{globals_r.app_name}</h1>
-		<p class="lead text-left">bypass Reddit's 1000-item listing limits by externally storing your Reddit items (saved, created, upvoted, downvoted, hidden) in your own database</p>
+		<p class="lead text-left">{globals_r.description}</p>
 		<p class="lead text-left">features: new items auto-sync, synced items not affected by Reddit deletion, search for items, filter by subreddit, import csv data from <a href="https://www.reddit.com/settings/data-request" target="_blank">Reddit data request</a>, export data as json</p>
 		<hr class="bg-secondary my-4"/>
 		<div class="embed-responsive embed-responsive-16by9">

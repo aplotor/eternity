@@ -1,6 +1,4 @@
 {
-	"ext": "mjs",
-	"ignore": [
-		"./tempfiles/"
-	]
+	"legacyWatch": true,
+	"ext": "mjs"
 }

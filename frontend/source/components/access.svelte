@@ -27,22 +27,23 @@
 		new_data_alert_wrapper
 	] = [];
 
-	let active_data = { // active_category data ONLY
+	let active_data = { // entire active_category data
 		items: {},
 		item_sub_icon_urls: {}
 	};
 	let active_category = "saved";
 	let active_type = "all";
-	let active_search_str = null;
-	let active_item_ids = null; // ids of filtered items (by selected type, subreddit, and search string). only these items will be listed in item_list from active_data
+	let active_sub = "all";
+	let active_search_str = "";
+	let active_item_ids = []; // ids of filtered items (by selected type, subreddit, and search string). only these items will be listed in item_list from active_data
 	let items_currently_listed = 0;
 
 	let item_list = null;
 	const observer = new IntersectionObserver((entries) => {
 		for (const entry of entries) {
 			if (entry.intersectionRatio > 0) { // observed element is in view
-				list_next_items(25);
 				observer.unobserve(entry.target);
+				list_next_items(25);
 			}
 		}
 	}, {
@@ -87,7 +88,7 @@
 			const all_row_1_popover_btns = document.querySelectorAll(".row_1_popover_btn");
 			for (const btn of all_row_1_popover_btns) {
 				if (btn != evt.target) {
-					(btn.classList.contains("active") ? btn.classList.remove("active") : null);
+					btn.classList.remove("active");
 				} else {
 					btn.classList.toggle("active");
 				}
@@ -112,7 +113,6 @@
 			const item_id = evt.target.parentElement.parentElement.classList[0];
 			const item_category = active_category;
 			const item_type = document.querySelector(`#${item_id}`).dataset.type;
-			// console.log(item_id, item_category, item_type);
 
 			if (delete_from == "eternity" || delete_from == "both") {
 				const list_item = document.querySelector(`#${item_id}`);
@@ -156,7 +156,7 @@
 				active_category = selected_category;
 				show_skeleton_loading();
 				try {
-					await get_parse_set_data();
+					await get_parse_set_active_data();
 				} catch (err) {
 					console.error(err);
 				}
@@ -187,7 +187,7 @@
 			new_data_alert_wrapper.classList.add("d-none");
 			show_skeleton_loading();
 			try {
-				await get_parse_set_data();
+				await get_parse_set_active_data();
 			} catch (err) {
 				console.error(err);
 			}
@@ -211,17 +211,14 @@
 		}, 100);
 	}
 
-	async function get_parse_set_data() {
+	async function get_parse_set_active_data() {
 		active_data.items = {};
 		active_data.item_sub_icon_urls = {};
 
 		const ref = $globals_w.firebase_db.ref(active_category);
 		const snapshot = await ref.get();
 		const data = snapshot.val();
-
-		if (!data) {
-			return;
-		} else {
+		if (data) {
 			if (data.items) {
 				const sorted_items_entries = Object.entries(data.items).sort((a, b) => b[1].created_epoch - a[1].created_epoch); // sort by created_epoch, descending
 				for (const entry of sorted_items_entries) {
@@ -250,16 +247,6 @@
 		skeleton_list.classList.remove("d-none");
 	}
 
-	function refresh_item_list() {
-		observer.disconnect(); // stops observing all currently observed elements. (does NOT stop the intersection observer. i.e., can still observe new elements)
-		item_list.innerHTML = "";
-		item_list.scrollTop = 0;
-		items_currently_listed = 0;
-
-		set_active_item_ids();
-		list_next_items(25);
-	}
-
 	function hide_skeleton_loading() {
 		skeleton_list.classList.add("d-none");
 		item_list.classList.remove("d-none");
@@ -268,21 +255,27 @@
 
 	function set_active_item_ids() { // filter ➔ set
 		// filter by active_type
-		if (active_type == "all") {
-			active_item_ids = Object.keys(active_data.items);
-		} else if (active_type == "posts" || active_type == "comments") {
-			active_item_ids = [];
-			const items_entries = Object.entries(active_data.items);
-			for (const entry of items_entries) {
-				const item_key = entry[0];
-				const item_value = entry[1];
+		switch (active_type) {
+			case "all":
+				active_item_ids = Object.keys(active_data.items);
+				break;
+			case "posts":
+			case "comments":
+				active_item_ids = [];
+				const items_entries = Object.entries(active_data.items);
+				for (const entry of items_entries) {
+					const item_key = entry[0];
+					const item_value = entry[1];
 
-				(item_value.type == active_type.slice(0, -1) ? active_item_ids.push(item_key) : null);
-			}
+					(item_value.type == active_type.slice(0, -1) ? active_item_ids.push(item_key) : null);
+				}
+				break;
+			default:
+				break;
 		}
 
 		// filter by selected subreddit
-		if (subreddit_select.value != "" && subreddit_select.value != "all") {
+		if (active_sub != "all") {
 			const filtered_items = {};
 			for (const item_id of active_item_ids) {
 				filtered_items[item_id] = active_data.items[item_id];
@@ -294,13 +287,13 @@
 				const item_key = entry[0];
 				const item_value = entry[1];
 
-				(item_value.sub == subreddit_select.value ? active_item_ids.push(item_key) : null);
+				(item_value.sub == active_sub ? active_item_ids.push(item_key) : null);
 			}
 		}
 
 		// filter by search string
-		if (search_input.value.trim() != "") {
-			const space_delimited_search_input = search_input.value.trim().split(" ").map((term) => term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")); // escape regex special chars: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions
+		if (active_search_str != "") {
+			const space_delimited_search_input = active_search_str.split(" ").map((term, idx, arr) => term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")); // escape regex special chars: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions
 
 			const filtered_items = {};
 			for (const item_id of active_item_ids) {
@@ -313,12 +306,12 @@
 				const item_key = entry[0];
 				const item_value = entry[1];
 
-				let num_matches = 0;
+				let matches = 0;
 				for (const term of space_delimited_search_input) {
 					const re = new RegExp(term, "i");
-					(re.test(item_value.sub) || re.test(item_value.author) || re.test(item_value.content) ? num_matches++ : null);
+					(re.test(item_value.sub) || re.test(item_value.author) || re.test(item_value.content) ? matches++ : null);
 				}
-				(num_matches == space_delimited_search_input.length ? active_item_ids.push(item_key) : null);
+				(matches == space_delimited_search_input.length ? active_item_ids.push(item_key) : null);
 			}
 		}
 	}
@@ -329,14 +322,13 @@
 			return;
 		}
 
-		const x = items_currently_listed + count;
 		const max_items = active_item_ids.length;
-
 		if (max_items == 0) {		
 			item_list.innerHTML = '<div class="list-group-item text-light lead">no results</div>';
 			return;
 		}
-
+		
+		const x = items_currently_listed + count;
 		while (items_currently_listed < x && items_currently_listed < max_items) {
 			const item_id = active_item_ids[items_currently_listed];
 			const item = active_data.items[item_id];
@@ -345,7 +337,7 @@
 				<div id="${item_id}" class="list-group-item list-group-item-action text-left text-light p-1" data-url="${item.url}" data-type="${item.type}">
 					<a href="https://www.reddit.com/${item.sub}" target="_blank"><img src="${active_data.item_sub_icon_urls[item.sub]}" class="rounded-circle${(active_data.item_sub_icon_urls[item.sub] == "#" ? "" : " border border-light")}"/></a><small><a href="https://www.reddit.com/${item.sub}" target="_blank"><b class="ml-2">${item.sub}</b></a> &bull; <a href="https://www.reddit.com/${item.author}" target="_blank">${item.author}</a> &bull; <i data-url="${item.url}" data-toggle="tooltip" data-placement="top" title="${utils.epoch_to_formatted_datetime(item.created_epoch)}">${utils.time_since(item.created_epoch)}</i></small>
 					<p class="content_wrapper lead line_height_1 noto_sans m-0" data-url="${item.url}">${(item.type == "post" ? "<b>" : "<small>")}${item.content.replaceAll("<", "&lt;").replaceAll(">", "&gt;")}${(item.type == "post" ? "</b>" : "</small>")}</p>
-					<button type="button" class="delete_btn btn btn-sm btn-outline-secondary shadow-none border-0 py-0" data-toggle="popover" data-placement="right" data-title="delete item from" data-content='<div class="${item_id}"><div><span class="row_1_popover_btn btn btn-sm btn-primary float-left p-1">eternity</span><span class="row_1_popover_btn btn btn-sm btn-primary float-center p-1">Reddit</span><span class="row_1_popover_btn btn btn-sm btn-primary float-right p-1">both</span></div><div><span class="row_2_popover_btn btn btn-sm btn-secondary float-left mt-2">cancel</span><span class="row_2_popover_btn delete_item_confirm_btn btn btn-sm btn-danger float-right mt-2">confirm</span></div><div class="clearfix"></div></div>' data-html="true">delete</button> <button type="button" class="copy_link_btn btn btn-sm btn-outline-secondary shadow-none border-0 py-0">copy link</button>
+					<button type="button" class="delete_btn btn btn-sm btn-outline-secondary shadow-none border-0 py-0" data-toggle="popover" data-placement="right" data-title="delete item from" data-content='<div class="${item_id}"><div><span class="row_1_popover_btn btn btn-sm btn-primary float-left px-0">eternity</span><span class="row_1_popover_btn btn btn-sm btn-primary float-center px-0">Reddit</span><span class="row_1_popover_btn btn btn-sm btn-primary float-right px-0">both</span></div><div><span class="row_2_popover_btn btn btn-sm btn-secondary float-left mt-2">cancel</span><span class="row_2_popover_btn delete_item_confirm_btn btn btn-sm btn-danger float-right mt-2">confirm</span></div><div class="clearfix"></div></div>' data-html="true">delete</button> <button type="button" class="copy_link_btn btn btn-sm btn-outline-secondary shadow-none border-0 py-0">copy link</button>
 				</div>
 			`);
 
@@ -358,6 +350,16 @@
 		}
 	}
 
+	function refresh_item_list() {
+		observer.disconnect(); // stops observing all currently observed elements. (does NOT stop the intersection observer. i.e., it can still observe new elements)
+		item_list.innerHTML = "";
+		item_list.scrollTop = 0;
+		items_currently_listed = 0;
+
+		set_active_item_ids();
+		list_next_items(25);
+	}
+
 	function update_search_placeholder() {
 		search_input.placeholder = `search ${active_item_ids.length} item${(active_item_ids.length == 1 ? "" : "s")}`;
 	}
@@ -365,16 +367,18 @@
 	function fill_subreddit_select() {
 		subreddit_select.innerHTML = "<option>all</option>";
 
-		const subs = [];
+		let subs = new Set();
 		if (active_type == "all") {
 			for (const item in active_data.items) {
-				(!subs.includes(active_data.items[item].sub) ? subs.push(active_data.items[item].sub) : null);
+				subs.add(active_data.items[item].sub);
 			}
 		} else {
 			for (const item in active_data.items) {
-				(active_data.items[item].type == active_type.slice(0, -1) && !subs.includes(active_data.items[item].sub) ? subs.push(active_data.items[item].sub) : null);
+				(active_data.items[item].type == active_type.slice(0, -1) ? subs.add(active_data.items[item].sub) : null);
 			}
 		}
+
+		subs = [...subs];
 		subs.sort((a, b) => a.localeCompare(b, "en"));
 
 		for (const sub of subs) {
@@ -387,7 +391,7 @@
 	}
 
 	svelte.onMount(async () => {
-		globals_r.socket.emit("page switch", "access");
+		globals_r.socket.emit("page", "access");
 		
 		globals_r.socket.on("store last updated epoch", (epoch) => {
 			last_updated_epoch = epoch;
@@ -396,7 +400,7 @@
 		globals_r.socket.on("show refresh alert", (categories_w_new_data) => {
 			for (const category of categories_w_new_data) {
 				if (category == active_category) {
-					(new_data_alert_wrapper.classList.contains("d-none") ? new_data_alert_wrapper.classList.remove("d-none") : null);
+					new_data_alert_wrapper.classList.remove("d-none");
 					utils.show_alert(new_data_alert_wrapper, '<span class="ml-1">new data available!</span><button id="refresh_btn" class="btn btn-sm btn-primary ml-2">refresh</button>', "primary");
 					break;
 				}
@@ -420,7 +424,7 @@
 				}, 100);
 			});
 
-			await get_parse_set_data();
+			await get_parse_set_active_data();
 			refresh_item_list();
 			hide_skeleton_loading();
 			update_search_placeholder();
@@ -433,7 +437,8 @@
 		subreddit_select_btn = document.querySelector(".bs-placeholder");
 		subreddit_select_dropdown = document.querySelector(".bootstrap-select");
 
-		jQuery(subreddit_select).on("changed.bs.select", (evt, clicked_index, is_selected, previous_value) => { // https://developer.snapappointments.com/bootstrap-select/options/#events
+		jQuery(subreddit_select).on("changed.bs.select", (evt, clicked_idx, is_selected, previous_value) => { // https://developer.snapappointments.com/bootstrap-select/options/#events
+			active_sub = evt.target.value;
 			refresh_item_list();
 			update_search_placeholder();
 		});
@@ -465,13 +470,16 @@
 					active_search_str = "";
 					refresh_item_list();
 					break;
-				default:
+				case "Backspace":
+				case "Delete":
 					setTimeout(() => {
 						if (active_search_str && evt.target.value.trim() == "") {
 							active_search_str = "";
 							refresh_item_list();
 						}
 					}, 100);
+					break;
+				default:
 					break;
 			}
 		});

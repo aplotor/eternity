@@ -44,7 +44,6 @@ function show_alert(alert_wrapper, message, type) {
 }
 
 export {
-	now_epoch,
 	epoch_to_formatted_datetime,
 	time_since,
 	shake_element,

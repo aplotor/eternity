@@ -162,26 +162,23 @@
 				`);
 			}
 
-			const item_fns = {
-				saved: [],
-				created: [],
-				upvoted: [],
-				downvoted: [],
-				hidden: null
-			};
+			const item_fns = {};
 
-			for (let i = 0; i < files_input.files.length; i++) {
-				const file = files_input.files[i];
-				// console.log(file);
+			const categories = ["saved", "created", "upvoted", "downvoted", "hidden"];
+			for (const category of categories) {
+				item_fns[category] = [];
+			}
+
+			for (const file_idx in ((({length, ...rest}) => rest)(files_input.files))) {
+				const file = files_input.files[file_idx];
 
 				const csv = await new Promise((resolve, reject) => {
 					const reader = new FileReader();
 					reader.readAsBinaryString(file);
 					reader.onloadend = function (evt) {
-						const options = {
+						resolve(xlsx.read(evt.target.result, {
 							type: "binary"
-						};
-						resolve(xlsx.read(evt.target.result, options));
+						}));
 					}
 					reader.onerror = function (evt) {
 						reject(reader.error);
@@ -189,29 +186,28 @@
 				});
 				const sheet_list = csv.SheetNames;
 				const sheet = csv.Sheets[sheet_list[0]];
-				const objs_arr = xlsx.utils.sheet_to_json(sheet);
-				// console.log(objs_arr);
+				const items = xlsx.utils.sheet_to_json(sheet);
 
 				switch (file.name) {
 					case "saved_posts.csv":
-						item_fns.saved.push(...(objs_arr.map((obj) => `t3_${obj.id}`)));
+						item_fns.saved.push(...(items.map((item, idx, arr) => `t3_${item.id}`)));
 						break;
 					case "saved_comments.csv":
-						item_fns.saved.push(...(objs_arr.map((obj) => `t1_${obj.id}`)));
+						item_fns.saved.push(...(items.map((item, idx, arr) => `t1_${item.id}`)));
 						break;
 					case "posts.csv":
-						item_fns.created.push(...(objs_arr.map((obj) => `t3_${obj.id}`)));
+						item_fns.created.push(...(items.map((item, idx, arr) => `t3_${item.id}`)));
 						break;
 					case "comments.csv":
-						item_fns.created.push(...(objs_arr.map((obj) => `t1_${obj.id}`)));
+						item_fns.created.push(...(items.map((item, idx, arr) => `t1_${item.id}`)));
 						break;
 					case "post_votes.csv":
-						for (const obj of objs_arr) {
-							(obj.direction == "none" ? null : item_fns[`${obj.direction}voted`].push(`t3_${obj.id}`));
+						for (const item of items) {
+							(item.direction == "none" ? null : item_fns[`${item.direction}voted`].push(`t3_${item.id}`));
 						}
 						break;
 					case "hidden_posts.csv":
-						item_fns.hidden = objs_arr.map((obj) => `t3_${obj.id}`);
+						item_fns.hidden = items.map((item, idx, arr) => `t3_${item.id}`);
 						break;
 					default:
 						break;
@@ -220,9 +216,9 @@
 
 			const updates = {};
 			for (const category in item_fns) {
-				if (item_fns[category] && item_fns[category].length != 0) {
+				if (item_fns[category].length > 0) {
 					for (const fn of item_fns[category]) {
-						(fn.includes(".") ? null : updates[`${category}/item_fns_to_import/${fn}`] = fn); // handle possible anomaly fullnames: see thread https://www.reddit.com/r/help/comments/rztejh/saved_posts_beyond_the_1000_visible_limit
+						(fn.includes(".") ? null : updates[`${category}/item_fns_to_import/${fn}`] = fn); // exclude anomaly fns: see thread https://www.reddit.com/r/help/comments/rztejh/saved_posts_beyond_the_1000_visible_limit
 					}
 				}
 			}
@@ -363,7 +359,7 @@
 					<button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
 				</div>
 				<div class="modal-body">
-					<span>IMPORT STARTED. IT MAY TAKE UP TO A DAY TO COMPLETE. DO NOT TRY TO RE-IMPORT IF YOU DON'T SEE ALL THE ITEMS IN ETERNITY IMMEDIATELY. YOU CAN CLOSE/LEAVE THIS PAGE NOW</span>
+					<span>import started. it may take up to a day to complete. do not try to re-import if you don't see all the items in eternity immediately. you can close/leave this page now</span>
 				</div>
 				<div class="modal-footer">
 					<button type="button" class="btn btn-light" data-dismiss="modal">ok</button>
