@@ -2,7 +2,7 @@
 	"type": "module",
 	"scripts": {
 		"dev": "RUN=dev PORT=1301 nodemon ./controller/server.mjs",
-		"prod_start": "RUN=prod PORT=1301 pm2 start ./controller/server.mjs --interpreter node --name portals",
+		"prod_start": "RUN=prod PORT=1301 pm2 start ./controller/server.mjs --interpreter node --name eternity --update-env",
 		"prod_stop": "pm2 stop ./controller/server.mjs"
 	},
 	"devDependencies": {
