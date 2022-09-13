@@ -25,8 +25,6 @@ elif [ "$1" = "prod" ]; then
 	elif [ "$2" = "update" ]; then
 		sh ./run.sh prod stop
 		git pull
-		(cd ./backend/ && npm ci)
-		(cd ./frontend/ && npm ci)
 		sh ./run.sh prod build
 		sh ./run.sh prod start
 		return
