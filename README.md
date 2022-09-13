@@ -10,6 +10,7 @@ bypass Reddit's 1000-item listing limits by externally storing your Reddit items
 	- unsave/delete/unvote/unhide items from Reddit directly on eternity
 	- import csv data from [Reddit data request](https://www.reddit.com/settings/data-request)
 	- export data as json
+- [demo](https://www.youtube.com/watch?v=4pxXM98ewIc)
 - [Firebase setup guide](https://www.youtube.com/watch?v=KPxppovc56A)
 - [selfhosted version](https://github.com/jc9108/expanse)
 
