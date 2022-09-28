@@ -29,9 +29,6 @@ export default { // https://vitejs.dev/config
 			allow: [
 				frontend
 			]
-		},
-		watch: {
-			usePolling: true // for hmr on wsl2: https://vitejs.dev/config/server-options.html#server-watch
 		}
 	}
 };
