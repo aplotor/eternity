@@ -7,14 +7,12 @@ const readonly = {
 	app_name: "eternity",
 	description: "bypass Reddit's 1000-item listing limits by externally storing your Reddit items (saved, created, upvoted, downvoted, hidden) in your own database",
 	repo: "https://github.com/jc9108/eternity",
-	sponsor_url: "https://github.com/sponsors/jc9108",
 	backend: (env_static_public.RUN == "dev" ? "/backend" : ""),
-	socket: socket_io_client.io((env_static_public.RUN == "dev" ? `http://${(app_env.browser ? window.location.hostname : "localhost")}:${Number.parseInt(env_static_public.PORT)+1}` : ""))
+	socket: socket_io_client.io((env_static_public.RUN == "dev" ? `http://${(app_env.browser ? window.location.hostname : "localhost")}:${Number.parseInt(env_static_public.PORT)+1}` : "")),
+	portals: (env_static_public.RUN == "dev" ? `http://${(app_env.browser ? window.location.hostname : "localhost")}:1025` : "https://portals.sh")
 };
 
 const writable = store.writable({
-	all_apps_urls: null,
-
 	firebase_app: null,
 	firebase_auth: null,
 	firebase_db: null
