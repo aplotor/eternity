@@ -13,9 +13,3 @@ bypass Reddit's 1000-item listing limits by externally storing your Reddit items
 - [demo](https://www.youtube.com/watch?v=4pxXM98ewIc)
 - [Firebase setup guide](https://www.youtube.com/watch?v=KPxppovc56A)
 - [selfhosted version](https://github.com/jc9108/expanse)
-
-<hr/>
-
-- sponsors::
-	- [jmorlin](https://github.com/jmorlin)
-	- [rubik11](https://github.com/rubik11)
