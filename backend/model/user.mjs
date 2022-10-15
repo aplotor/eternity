@@ -8,8 +8,6 @@ const email = await import(`${backend}/model/email.mjs`);
 const epoch = await import(`${backend}/model/epoch.mjs`);
 const logger = await import(`${backend}/model/logger.mjs`);
 
-import snoowrap from "snoowrap";
-
 let update_all_completed = null;
 
 const usernames_to_socket_ids = {};
@@ -507,6 +505,15 @@ class User {
 		delete this.new_data;
 		delete this.sub_icon_urls_to_get;
 		delete this.imported_fns_to_delete;
+	}
+	async get_comment_from_reddit(comment_id) {
+		const requester = reddit.create_requester(cryptr.decrypt(this.reddit_api_refresh_token_encrypted));
+		
+		const unfetched_comment = requester.getComment(comment_id);
+		const fetched_comment = await unfetched_comment.fetch();
+		
+		const comment_content = fetched_comment.body;
+		return comment_content;
 	}
 	async delete_item_from_reddit_acc(item_id, item_category, item_type) {
 		const requester = reddit.create_requester(cryptr.decrypt(this.reddit_api_refresh_token_encrypted));

@@ -386,6 +386,16 @@ io.on("connect", (socket) => {
 		}
 	});
 
+	socket.on("get comment from reddit", async (comment_id) => {
+		try {
+			const u = await user.get(socket.username);
+			const comment_content = await u.get_comment_from_reddit(comment_id);
+			io.to(socket.id).emit("got comment from reddit", comment_content);
+		} catch (err) {
+			console.error(err);
+		}
+	});
+
 	socket.on("delete item from reddit acc", async (item_id, item_category, item_type) => {
 		try {
 			const u = await user.get(socket.username);
