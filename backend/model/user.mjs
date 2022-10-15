@@ -2,6 +2,7 @@ const backend = process.cwd();
 
 const sql = await import(`${backend}/model/sql.mjs`);
 const firebase = await import(`${backend}/model/firebase.mjs`);
+const reddit = await import(`${backend}/model/reddit.mjs`);
 const cryptr = await import(`${backend}/model/cryptr.mjs`);
 const email = await import(`${backend}/model/email.mjs`);
 const epoch = await import(`${backend}/model/epoch.mjs`);
@@ -344,12 +345,7 @@ class User {
 		let progress = (io ? 0 : null);
 		const complete = (io ? 8 : null);
 
-		this.requester = new snoowrap({
-			clientId: process.env.REDDIT_APP_ID,
-			clientSecret: process.env.REDDIT_APP_SECRET,
-			userAgent: `web:eternity${(process.env.RUN == "dev" ? "_test" : "")}:v=${process.env.VERSION} (by u/${process.env.REDDIT_USERNAME})`, // https://github.com/reddit-archive/reddit/wiki/API "User-Agent"
-			refreshToken: cryptr.decrypt(this.reddit_api_refresh_token_encrypted)
-		});
+		this.requester = reddit.create_requester(cryptr.decrypt(this.reddit_api_refresh_token_encrypted));
 		this.me = await this.requester.getMe();
 
 		this.firebase_app = firebase.create_app(JSON.parse(cryptr.decrypt(this.firebase_service_acc_key_encrypted)), JSON.parse(cryptr.decrypt(this.firebase_web_app_config_encrypted)).databaseURL, this.username);
@@ -513,12 +509,7 @@ class User {
 		delete this.imported_fns_to_delete;
 	}
 	async delete_item_from_reddit_acc(item_id, item_category, item_type) {
-		const requester = new snoowrap({
-			clientId: process.env.REDDIT_APP_ID,
-			clientSecret: process.env.REDDIT_APP_SECRET,
-			userAgent: `web:eternity${(process.env.RUN == "dev" ? "_test" : "")}:v=${process.env.VERSION} (by u/${process.env.REDDIT_USERNAME})`, // https://github.com/reddit-archive/reddit/wiki/API "User-Agent"
-			refreshToken: cryptr.decrypt(this.reddit_api_refresh_token_encrypted)
-		});
+		const requester = reddit.create_requester(cryptr.decrypt(this.reddit_api_refresh_token_encrypted));
 	
 		let item = null;
 		let item_fn = null; // https://www.reddit.com/dev/api/#fullnames
