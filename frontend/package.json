@@ -14,7 +14,7 @@
 	"dependencies": {
 		"axios": "0.26.1",
 		"firebase": "8.10.1",
-		"socket.io-client": "4.5.1",
+		"socket.io-client": "4.5.3",
 		"xlsx": "0.17.5"
 	}
 }
