@@ -5,8 +5,8 @@ const firebase = await import(`${backend}/model/firebase.mjs`);
 const reddit = await import(`${backend}/model/reddit.mjs`);
 const cryptr = await import(`${backend}/model/cryptr.mjs`);
 const email = await import(`${backend}/model/email.mjs`);
-const epoch = await import(`${backend}/model/epoch.mjs`);
 const logger = await import(`${backend}/model/logger.mjs`);
+const utils = await import(`${backend}/model/utils.mjs`);
 
 let update_all_completed = null;
 
@@ -49,7 +49,7 @@ class User {
 				}
 			};
 			this.last_updated_epoch = null;
-			this.last_active_epoch = epoch.now();
+			this.last_active_epoch = utils.now_epoch();
 			this.email_encrypted = null;
 			this.email_notif = {
 				last_inactive_notif_epoch: null,
@@ -114,9 +114,9 @@ class User {
 				this.new_data[category].items[item.id] = {
 					type: (type == "posts" ? "post" : "comment"),
 					content: (type == "posts" ? item.title : item.body),
-					author: "u/"+item.author.name,
+					author: `u/${item.author.name}`,
 					sub: item.subreddit_name_prefixed,
-					url: "https://www.reddit.com" + (item.permalink.endsWith("/") ? item.permalink.slice(0, -1) : item.permalink),
+					url: `https://www.reddit.com${utils.strip_trailing_slash(item.permalink)}`,
 					created_epoch: item.created_utc
 				};
 
@@ -207,7 +207,7 @@ class User {
 				this.category_sync_info[category][`latest_fn_${type}`] = latest_fn;
 			} else {
 				this.parse_listing(listing, category, type);
-				this.category_sync_info[category].latest_new_data_epoch = epoch.now();
+				this.category_sync_info[category].latest_new_data_epoch = utils.now_epoch();
 			}
 		} else {
 			const extended_listing = await listing.fetchAll({
@@ -216,7 +216,7 @@ class User {
 			// console.log(`(${category}) (${type}) extended listing is finished: ${extended_listing.isFinished}`);
 
 			this.parse_listing(extended_listing, category, type);
-			this.category_sync_info[category].latest_new_data_epoch = epoch.now();
+			this.category_sync_info[category].latest_new_data_epoch = utils.now_epoch();
 		}
 	}
 	async import_category(category, type) {
@@ -238,7 +238,7 @@ class User {
 				this.parse_listing(listing, category, type, false, true);
 			}
 
-			this.category_sync_info[category].latest_new_data_epoch = epoch.now();
+			this.category_sync_info[category].latest_new_data_epoch = utils.now_epoch();
 	
 			this.imported_fns_to_delete[category] = fns;
 		}
@@ -298,7 +298,7 @@ class User {
 				break;
 			case "u/":
 				for (const sub of responses) {
-					const sub_name = "u/"+sub.name;
+					const sub_name = `u/${sub.name}`;
 	
 					let sub_icon_url = "#";
 					if (sub.icon_img) {
@@ -484,9 +484,9 @@ class User {
 			console.error(err);
 			logger.error(`user (${this.username}) db update error (${err})`);
 
-			if (epoch.now() - this.email_notif.last_update_failed_notif_epoch >= 2592000) { // 30d
+			if (utils.now_epoch() - this.email_notif.last_update_failed_notif_epoch >= 2592000) { // 30d
 				email.send(this, "database update error notice", `your database could not be updated because: ${err}. please resolve this asap`);
-				this.email_notif.last_update_failed_notif_epoch = epoch.now();
+				this.email_notif.last_update_failed_notif_epoch = utils.now_epoch();
 				sql.update_user(this.username, {
 					email_notif: JSON.stringify(this.email_notif)
 				}).catch((err) => console.error(err));
@@ -497,7 +497,7 @@ class User {
 
 		await sql.update_user(this.username, {
 			category_sync_info: JSON.stringify(this.category_sync_info),
-			last_updated_epoch: this.last_updated_epoch = epoch.now()
+			last_updated_epoch: this.last_updated_epoch = utils.now_epoch()
 		});
 		(io ? io.to(socket_id).emit("update progress", ++progress, complete) : null);
 		console.log(`updated user (${this.username})`);
@@ -647,6 +647,7 @@ async function get(username, existence_check=false) {
 }
 
 async function update_all(io) {
+	console.log("update all started");
 	update_all_completed = false;
 
 	const all_usernames = Object.keys(usernames_to_socket_ids);
@@ -656,15 +657,15 @@ async function update_all(io) {
 			user = await get(username);
 
 			if (user.last_updated_epoch) {
-				if (epoch.now() - user.last_active_epoch >= 15552000) { // 6mo
-					if (epoch.now() - user.email_notif.last_inactive_notif_epoch >= 7776000) { // 3mo
+				if (utils.now_epoch() - user.last_active_epoch >= 15552000) { // 6mo
+					if (utils.now_epoch() - user.email_notif.last_inactive_notif_epoch >= 7776000) { // 3mo
 						email.send(user, "account inactivity notice", "you have not used eternity for 6 or more consecutive months at this time. as such, your eternity account has been marked inactive and new Reddit data will not continue to sync to your database. to resolve this, log in to eternity");
-						user.email_notif.last_inactive_notif_epoch = epoch.now();
+						user.email_notif.last_inactive_notif_epoch = utils.now_epoch();
 						sql.update_user(user.username, {
 							email_notif: JSON.stringify(user.email_notif)
 						}).catch((err) => console.error(err));
 					}
-				} else if (epoch.now() - user.last_updated_epoch >= 30) {
+				} else if (utils.now_epoch() - user.last_updated_epoch >= 30) {
 					const pre_update_category_sync_info = JSON.parse(JSON.stringify(user.category_sync_info));
 
 					await user.update();

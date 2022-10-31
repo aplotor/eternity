@@ -9,8 +9,8 @@ const sql = await import(`${backend}/model/sql.mjs`);
 const firebase = await import(`${backend}/model/firebase.mjs`);
 const cryptr = await import(`${backend}/model/cryptr.mjs`);
 const user = await import(`${backend}/model/user.mjs`);
-const epoch = await import(`${backend}/model/epoch.mjs`);
 const email = await import(`${backend}/model/email.mjs`);
+const utils = await import(`${backend}/model/utils.mjs`);
 
 import * as socket_io_server from "socket.io";
 import * as socket_io_client from "socket.io-client";
@@ -266,7 +266,7 @@ io.on("connect", (socket) => {
 					io.to(socket.id).emit("store last updated epoch", u.last_updated_epoch);
 
 					sql.update_user(u.username, {
-						last_active_epoch: u.last_active_epoch = epoch.now()
+						last_active_epoch: u.last_active_epoch = utils.now_epoch()
 					}).catch((err) => console.error(err));
 				} catch (err) {
 					console.error(err);
