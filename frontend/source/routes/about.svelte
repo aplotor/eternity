@@ -26,6 +26,7 @@
 				<li class="mt-3">this app is released under the <a target="_blank" href="https://choosealicense.com/licenses/agpl-3.0">AGPL3 License</a></li>
 				<li class="mt-2">you must log in to eternity at least once every 6 months or else your eternity account will be marked inactive and your new Reddit items will not continue to sync to your database</li>
 				<li class="mt-2"><a href="https://firebase.google.com/pricing" target="_blank">Firebase free tier</a> provides 1gb disk storage, which should be enough to last you a very long time (e.g., 5000 items ≈ 1.5mb = 0.0015gb). if your database usage eventually exceeds the free tier, you will need to upgrade your Firebase plan in order for eternity to continue storing your new Reddit items. or, you can choose to export out the existing data and wipe the database to continue for free</li>
+				<li class="mt-2">do not edit any of the Firebase project settings or database contents directly from Firebase. if you do and your eternity instance stops working, you may have to restart</li>
 			</ul>
 			<p class="mt-4">privacy policy</p>
 			<ul class="line_height_1 mt-n2">
