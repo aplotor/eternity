@@ -352,7 +352,7 @@ io.on("connect", (socket) => {
 			username: socket.username,
 			email_encrypted: socket.email_encrypted = cryptr.encrypt(email_addr)
 		};
-		email.send(obj, "verify your email", `your verification code is <big>${socket.id.replace(/(\W)|(_)/g, "").substring(0, 5).toUpperCase()}</big>. if you did not request this, please ignore this email`);
+		email.send(obj, "verify your email", `<big>${socket.id.replace(/(\W)|(_)/g, "").substring(0, 5).toUpperCase()}</big> is your verification code. if you did not request this, please ignore this email`);
 
 		io.to(socket.id).emit("alert", "email", "enter the code sent to this email to verify that it's your email. check your junk/spam folder if you don't see it. the verification must be done while this page is open, so don't close this page", "primary");
 

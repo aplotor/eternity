@@ -25,6 +25,7 @@
 		subreddit_select_dropdown,
 		category_btn_group,
 		type_btn_group,
+		item_list,
 		skeleton_list,
 		new_data_alert_wrapper
 	] = [];
@@ -40,16 +41,15 @@
 	let active_item_ids = []; // ids of filtered items (by selected type, subreddit, and search string). only these items will be listed in item_list from active_data
 	let items_currently_listed = 0;
 
-	let item_list = null;
-	const observer = new IntersectionObserver((entries) => {
+	const intersection_observer = new IntersectionObserver((entries) => {
 		for (const entry of entries) {
 			if (entry.intersectionRatio > 0) { // observed element is in view
-				observer.unobserve(entry.target);
+				intersection_observer.unobserve(entry.target);
 				list_next_items(25);
 			}
 		}
 	}, {
-		root: item_list,
+		root: document,
 		rootMargin: "0px",
 		threshold: 0
 	});
@@ -155,8 +155,7 @@
 				list_item.classList.add("skeleton_item", "rounded", "mb-2");
 
 				try {
-					const ref = $globals_w.firebase_db.ref(`${item_category}/items/${item_id}`);
-					await ref.remove();
+					await $globals_w.firebase_db.ref(`${item_category}/items/${item_id}`).remove();
 	
 					list_item.remove();
 					active_item_ids.splice(active_item_ids.indexOf(item_id), 1);
@@ -247,8 +246,7 @@
 		active_data.items = {};
 		active_data.item_sub_icon_urls = {};
 
-		const ref = $globals_w.firebase_db.ref(active_category);
-		const snapshot = await ref.get();
+		const snapshot = await $globals_w.firebase_db.ref(active_category).get();
 		const data = snapshot.val();
 		if (data) {
 			if (data.items) {
@@ -374,7 +372,7 @@
 				</div>
 			`);
 
-			(++items_currently_listed == x-Math.floor(count/2)-1 ? observer.observe(document.querySelector(`[id="${item_id}"]`)) : null);
+			(++items_currently_listed == x-Math.floor(count/2)-1 ? intersection_observer.observe(document.querySelector(`[id="${item_id}"]`)) : null);
 
 			jQuery('[data-toggle="tooltip"]').tooltip("enable");
 			jQuery('[data-toggle="popover"]').popover("enable");
@@ -382,7 +380,7 @@
 	}
 
 	function refresh_item_list() {
-		observer.disconnect(); // stops observing all currently observed elements. (does NOT stop the intersection observer. i.e., it can still observe new elements)
+		intersection_observer.disconnect(); // stops observing all currently observed elements. (does NOT stop the intersection observer. i.e., it can still observe new elements)
 		item_list.innerHTML = "";
 		item_list.scrollTop = 0;
 		items_currently_listed = 0;
@@ -392,7 +390,8 @@
 	}
 
 	function update_search_placeholder() {
-		search_input.placeholder = `search ${active_item_ids.length} item${(active_item_ids.length == 1 ? "" : "s")}`;
+		const item_count = active_item_ids.length;
+		search_input.placeholder = `search ${item_count} item${(item_count == 1 ? "" : "s")}`;
 	}
 
 	function fill_subreddit_select() {
@@ -537,7 +536,7 @@
 <Navbar username={username} show_data_anchors={true}/>
 <div class="text-center mt-3">
 	<h1 class="display-4">{globals_r.app_name}</h1>
-	<span>last updated: <b bind:this={last_updated_wrapper_1}>?</b> ago</span>
+	<span>last updated: <b bind:this={last_updated_wrapper_1} id="last_updated_wrapper_1">?</b> ago</span>
 	<br/>
 	<small bind:this={last_updated_wrapper_2} class="d-none">?</small>
 	<div class="d-flex justify-content-center">

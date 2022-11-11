@@ -222,8 +222,7 @@
 					}
 				}
 			}
-			const ref = $globals_w.firebase_db.ref().root;
-			await ref.update(updates);
+			await $globals_w.firebase_db.ref().update(updates);
 
 			jQuery(modal).modal("show");
 		});

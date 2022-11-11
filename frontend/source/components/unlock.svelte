@@ -243,7 +243,7 @@
 					<button bind:this={validate_btn} class="btn btn-primary shadow-none ml-2">validate</button>
 				</li>
 				<li class="no_bullet mt-2"><div bind:this={firebase_alert_wrapper}></div></li>
-				<li class="mt-2">provide an email for notifications about your eternity account</li>
+				<li class="mt-2">provide an email for account notifications and recovery</li>
 				<li class="no_bullet mt-2">
 					<div class="d-flex w-100">
 						<input bind:this={email_input} type="text" class="form-control bg-light" placeholder="email address"/>

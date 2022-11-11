@@ -17,8 +17,7 @@ function get_db(app) {
 }
 
 async function is_empty(db) {
-	const ref = db.ref().root;
-	const snapshot = await ref.once("value");
+	const snapshot = await db.ref().once("value");
 	const db_is_empty = !snapshot.exists();
 	return db_is_empty;
 }
@@ -46,15 +45,11 @@ async function insert_data(db, data) {
 		}
 	}
 	
-	if (Object.keys(updates).length > 0) {
-		const ref = db.ref().root;
-		await ref.update(updates);
-	}
+	(Object.keys(updates).length > 0 ? await db.ref().update(updates) : null);
 }
 
 async function get_fns_to_import(db, category) {
-	const ref = db.ref(`${category}/item_fns_to_import`).limitToFirst(500);
-	const snapshot = await ref.get();
+	const snapshot = await db.ref(`${category}/item_fns_to_import`).limitToFirst(500).get();
 	const data = snapshot.val(); // null if no item_fns_to_import
 	return data;
 }
@@ -70,10 +65,7 @@ async function delete_imported_fns(db, fns) {
 		}
 	}
 
-	if (Object.keys(updates).length > 0) {
-		const ref = db.ref().root;
-		await ref.update(updates);
-	}
+	(Object.keys(updates).length > 0 ? await db.ref().update(updates) : null);
 }
 
 async function create_new_auth_token(app) {
