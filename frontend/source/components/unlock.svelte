@@ -177,6 +177,7 @@
 			}
 
 			globals_r.socket.emit("confirm email", email);
+			verification_code_input.focus();
 		});
 
 		verification_code_input.addEventListener("keydown", (evt) => {
