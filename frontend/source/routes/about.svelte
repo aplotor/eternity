@@ -32,7 +32,7 @@
 			<ul class="line_height_1 mt-n2">
 				<li class="mt-3">login is handled directly by Reddit (<a href="https://github.com/reddit-archive/reddit/wiki/OAuth2">oauth2</a>) so your password is never sent to eternity</li>
 				<li class="mt-2">eternity uses your Reddit authorization to continuously retrieve your new Reddit items, and stores them in your database using the Firebase info you provided</li>
-				<li class="mt-2">this service runs solely on user donations and sponsors. eternity doesn't run ads, track users, or make money off user data in any way</li>
+				<li class="mt-2">no user info is shared or sold. no info is used for any purposes other than the functioning of this app</li>
 			</ul>
 			<p class="mt-4">support</p>
 			<ul class="line_height_1 mt-n2">
