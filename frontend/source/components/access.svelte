@@ -31,7 +31,7 @@
 	] = [];
 
 	let active_data = { // entire active_category data
-		items: {},
+		items: new Map(),
 		item_sub_icon_urls: {}
 	};
 	let active_category = "saved";
@@ -159,7 +159,7 @@
 	
 					list_item.remove();
 					active_item_ids.splice(active_item_ids.indexOf(item_id), 1);
-					delete active_data.items[item_id];
+					active_data.items.delete(item_id);
 				} catch (err) {
 					console.error(err);
 				}
@@ -243,7 +243,7 @@
 	}
 
 	async function get_parse_set_active_data() {
-		active_data.items = {};
+		active_data.items.clear();
 		active_data.item_sub_icon_urls = {};
 
 		const snapshot = await $globals_w.firebase_db.ref(active_category).get();
@@ -255,7 +255,7 @@
 					const item_key = entry[0];
 					const item_value = entry[1];
 			
-					active_data.items[item_key] = item_value;
+					active_data.items.set(item_key, item_value);
 				}
 			}
 
@@ -287,13 +287,12 @@
 		// filter by selected type
 		switch (active_type) {
 			case "all":
-				active_item_ids = Object.keys(active_data.items);
+				active_item_ids = [...(active_data.items.keys())];
 				break;
 			case "posts":
 			case "comments":
 				active_item_ids = [];
-				const items_entries = Object.entries(active_data.items);
-				for (const entry of items_entries) {
+				for (const entry of active_data.items) {
 					const item_key = entry[0];
 					const item_value = entry[1];
 
@@ -306,14 +305,13 @@
 
 		// filter by selected subreddit
 		if (active_sub != "all") {
-			const filtered_items = {};
+			const filtered_items = new Map();
 			for (const item_id of active_item_ids) {
-				filtered_items[item_id] = active_data.items[item_id];
+				filtered_items.set(item_id, active_data.items.get(item_id));
 			}
 		
 			active_item_ids = [];
-			const items_entries = Object.entries(filtered_items);
-			for (const entry of items_entries) {
+			for (const entry of filtered_items) {
 				const item_key = entry[0];
 				const item_value = entry[1];
 
@@ -325,14 +323,13 @@
 		if (active_search_str != "") {
 			const space_delimited_search_input = active_search_str.split(" ").map((term, idx, arr) => term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")); // escape regex special chars: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions
 
-			const filtered_items = {};
+			const filtered_items = new Map();
 			for (const item_id of active_item_ids) {
-				filtered_items[item_id] = active_data.items[item_id];
+				filtered_items.set(item_id, active_data.items.get(item_id));
 			}
 		
 			active_item_ids = [];
-			const items_entries = Object.entries(filtered_items);
-			for (const entry of items_entries) {
+			for (const entry of filtered_items) {
 				const item_key = entry[0];
 				const item_value = entry[1];
 
@@ -361,7 +358,7 @@
 		const x = items_currently_listed + count;
 		while (items_currently_listed < x && items_currently_listed < max_items) {
 			const item_id = active_item_ids[items_currently_listed];
-			const item = active_data.items[item_id];
+			const item = active_data.items.get(item_id);
 
 			item_list.insertAdjacentHTML("beforeend", `
 				<div id="${item_id}" class="list-group-item list-group-item-action text-left text-light p-1" data-url="${item.url}" data-type="${item.type}">
@@ -399,12 +396,18 @@
 
 		let subs = new Set();
 		if (active_type == "all") {
-			for (const item in active_data.items) {
-				subs.add(active_data.items[item].sub);
+			for (const entry of active_data.items) {
+				const item_key = entry[0];
+				const item_value = entry[1];
+
+				subs.add(item_value.sub);
 			}
 		} else {
-			for (const item in active_data.items) {
-				(active_data.items[item].type == active_type.slice(0, -1) ? subs.add(active_data.items[item].sub) : null);
+			for (const entry of active_data.items) {
+				const item_key = entry[0];
+				const item_value = entry[1];
+
+				(item_value.type == active_type.slice(0, -1) ? subs.add(item_value.sub) : null);
 			}
 		}
 
