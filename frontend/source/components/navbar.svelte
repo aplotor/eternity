@@ -3,7 +3,7 @@
 	import * as utils from "frontend/source/utils.js";
 
 	import * as svelte from "svelte";
-	import xlsx from "xlsx";
+	import * as xlsx from "xlsx";
 
 	const globals_r = globals.readonly;
 	const globals_w = globals.writable;
