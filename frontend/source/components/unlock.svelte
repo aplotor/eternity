@@ -252,7 +252,7 @@
 						<button bind:this={confirm_btn} class="btn btn-primary shadow-none ml-2">confirm</button>
 					</div>
 					<div class="d-flex w-100 mt-2">
-						<input bind:this={verification_code_input} id="verification_code_input" type="text" class="form-control bg-light" placeholder="verification code"/>
+						<input bind:this={verification_code_input} type="text" class="form-control bg-light" placeholder="verification code"/>
 						<button bind:this={verify_btn} class="btn btn-primary shadow-none ml-2" disabled>verify</button>
 					</div>
 				</li>

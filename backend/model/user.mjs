@@ -162,7 +162,7 @@ class User {
 			}
 		}
 	}
-	async replace_latest_fn(category, type, save_now=false) {
+	async replace_latest_fn(category, type) {
 		const options = {
 			limit: 1
 		};
@@ -170,12 +170,6 @@ class User {
 		
 		const latest_fn = (listing.length != 0 ? listing[0].name : null);
 		this.category_sync_info[category][`latest_fn_${type}`] = latest_fn;
-
-		if (save_now) {
-			await sql.update_user(this.username, {
-				category_sync_info: JSON.stringify(this.category_sync_info)
-			});
-		}
 	}
 	async sync_category(category, type) {
 		let options = {
@@ -558,7 +552,10 @@ class User {
 	
 		if (replace_latest_fn) {
 			this.me = await requester.getMe();
-			await this.replace_latest_fn(item_category, (item_category == "saved" ? "mixed" : `${item_type}s`), true);
+			await this.replace_latest_fn(item_category, (item_category == "saved" ? "mixed" : `${item_type}s`));
+			await sql.update_user(this.username, {
+				category_sync_info: JSON.stringify(this.category_sync_info)
+			});
 		}
 	}
 	async purge() {
@@ -650,22 +647,25 @@ async function update_all(io) {
 						switch (err.extras.category) {
 							case "saved":
 							case "awarded":
-								await user.replace_latest_fn(err.extras.category, "mixed", true);
+								await user.replace_latest_fn(err.extras.category, "mixed");
 								break;
 							case "created":
 								await Promise.all([
-									user.replace_latest_fn(err.extras.category, "posts", true),
-									user.replace_latest_fn(err.extras.category, "comments", true)
+									user.replace_latest_fn(err.extras.category, "posts"),
+									user.replace_latest_fn(err.extras.category, "comments")
 								]);
 								break;
 							case "upvoted":
 							case "downvoted":
 							case "hidden":
-								await user.replace_latest_fn(err.extras.category, "posts", true);
+								await user.replace_latest_fn(err.extras.category, "posts");
 								break;
 							default:
 								break;
 						}
+						await sql.update_user(user.username, {
+							category_sync_info: JSON.stringify(user.category_sync_info)
+						});
 					} catch (err) {
 						console.error(err);
 						logger.error(`user (${username}) replace_latest_fn error (${err})`);
