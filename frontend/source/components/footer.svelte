@@ -86,7 +86,7 @@
 <footer class="text-center">
 	<p class="font_size_10 m-0"><a href="/about">about</a></p>
 	<p class="font_size_10 m-0"><a href="https://github.com/sponsors/jc9108" target="_blank">support this project</a></p>
-	<p class="font_size_10 m-0">released under the <a href="https://choosealicense.com/licenses/agpl-3.0" target="_blank">AGPL3 License</a> &#169; 2021+</p>
+	<p class="font_size_10 m-0">released under the <a href="https://choosealicense.com/licenses/agpl-3.0" target="_blank">AGPL3 License</a> &#169; <a href={globals_r.portals} target="_blank">portals</a></p>
 	<p class="font_size_10 m-0"><a href={`${globals_r.portals}/stats`} target="_blank">cloudflare zone stats</a></p>
 	<div class="btn-group dropdown">
 		<button bind:this={dropdown_btn} type="button" class="btn btn-link dropdown-toggle mt-n2 px-1 py-0" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" data-display="static"></button>
