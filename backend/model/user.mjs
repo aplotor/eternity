@@ -477,7 +477,7 @@ class User {
 			logger.error(`user (${this.username}) db update error (${err})`);
 
 			if (utils.now_epoch() - this.email_notif.last_update_failed_notif_epoch >= 2592000) { // 30d
-				email.send(this, "database update error notice", `your database could not be updated because: ${err}. please resolve this asap`);
+				email.send(this, "database update error notice", `your database could not be updated because: ${err}. please resolve this asap`).catch((err) => console.error(err));
 				this.email_notif.last_update_failed_notif_epoch = utils.now_epoch();
 				sql.update_user(this.username, {
 					email_notif: JSON.stringify(this.email_notif)
@@ -610,7 +610,7 @@ async function update_all(io) {
 			if (user.last_updated_epoch) {
 				if (utils.now_epoch() - user.last_active_epoch >= 15552000) { // 6mo
 					if (utils.now_epoch() - user.email_notif.last_inactive_notif_epoch >= 7776000) { // 3mo
-						email.send(user, "account inactivity notice", "you have not used eternity for 6 or more consecutive months at this time. as such, your eternity account has been marked inactive and new Reddit data will not continue to sync to your database. to resolve this, log in to eternity");
+						email.send(user, "account inactivity notice", "you have not used eternity for 6 or more consecutive months at this time. as such, your eternity account has been marked inactive and new Reddit data will not continue to sync to your database. to resolve this, log in to eternity").catch((err) => console.error(err));
 						user.email_notif.last_inactive_notif_epoch = utils.now_epoch();
 						sql.update_user(user.username, {
 							email_notif: JSON.stringify(user.email_notif)

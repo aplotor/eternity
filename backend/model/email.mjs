@@ -12,11 +12,12 @@ const transporter = nodemailer.createTransport({
 		clientSecret: process.env.NODEMAILER_GCP_CLIENT_SECRET,
 		user: process.env.NODEMAILER_GMAIL_ADDR,
 		refreshToken: process.env.NODEMAILER_GMAIL_REFRESH_TOKEN
-	}
+	},
+	pool: true
 });
 
-function send(user, subject, msg) {
-	const mail_options = {
+async function send(user, subject, msg) {
+	const info = await transporter.sendMail({
 		from: '"eternity" <eternity@portals.sh>',
 		to: cryptr.decrypt(user.email_encrypted),
 		subject: subject,
@@ -29,9 +30,8 @@ function send(user, subject, msg) {
 			<span>—</span><br/>
 			<a href=${(process.env.RUN == "dev" ? "http://localhost:" + (Number.parseInt(process.env.PORT)-1) : "https://eternity.portals.sh")} target="_blank">eternity</a>
 		`
-	};
-
-	transporter.sendMail(mail_options, (err, info) => (err ? console.error(err) : console.log(info)));
+	});
+	console.log(info);
 }
 
 export {
